@@ -1,25 +1,39 @@
 <?php
 // --- CONFIGURATION ---
+// Ensure this filename matches your uploaded CSV exactly!
 $book_csv = 'Mevs_English_Library 2025 - Sheet1.csv';
 $trans_csv = 'transactions.csv';
-$users_file = 'users.json'; 
-$admin_password = "1234"; 
-$n8n_webhook = ""; 
+$users_file = 'users.json';
+$admin_password = "1234"; // <--- CHANGE THIS FOR SECURITY
+$n8n_webhook = ""; // Paste your n8n URL here if you have one
 
+// --- ERROR HANDLING & HEADERS ---
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 0); // Keep 0 for production to avoid breaking JSON
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Helper: Safely Read CSV
+// --- SELF-HEALING (Create files if missing) ---
+if (!file_exists($trans_csv)) {
+    file_put_contents($trans_csv, "Student,Book,Action,Date\n");
+}
+if (!file_exists($users_file)) {
+    file_put_contents($users_file, "{}");
+}
+
+// --- HELPERS ---
 function read_transactions_safe($filename) {
     $rows = [];
     if (file_exists($filename) && ($handle = fopen($filename, "r")) !== FALSE) {
-        $header = fgetcsv($handle); 
+        $header = fgetcsv($handle); // Skip header
         while (($data = fgetcsv($handle)) !== FALSE) {
             if(count($data) >= 4) {
+                // [0]Student (Name <Email>), [1]Book, [2]Action, [3]Date
                 $rows[] = [
                     'Student' => $data[0] ?? 'Unknown', 
                     'Book' => $data[1] ?? 'Unknown', 
@@ -33,9 +47,6 @@ function read_transactions_safe($filename) {
     return $rows;
 }
 
-if (!file_exists($trans_csv)) file_put_contents($trans_csv, "Student,Book,Action,Date\n");
-if (!file_exists($users_file)) file_put_contents($users_file, "{}");
-
 // --- ROUTER ---
 
 try {
@@ -44,10 +55,13 @@ try {
     if ($action === 'books' && $method === 'GET') {
         $books_raw = [];
         if (file_exists($book_csv) && ($handle = fopen($book_csv, "r")) !== FALSE) {
-            fgetcsv($handle); 
+            fgetcsv($handle); // Skip Header
             while (($data = fgetcsv($handle)) !== FALSE) {
-                if(isset($data[0]) && $data[0] !== '') { 
-                    $copies = (!empty($data[4])) ? (int)$data[4] : 1;
+                // Ensure row has data
+                if(isset($data[0]) && trim($data[0]) !== '') { 
+                    // Fix: If copies column is empty, default to 1
+                    $copies = (isset($data[4]) && $data[4] !== '') ? (int)$data[4] : 1;
+                    
                     $books_raw[] = [
                         'id' => $data[0],
                         'name' => $data[1] ?? 'Unknown',
@@ -80,7 +94,7 @@ try {
         exit;
     }
 
-    // 2. GET ACTIVE USERS
+    // 2. GET ACTIVE STUDENTS
     if ($action === 'students' && $method === 'GET') {
         $transactions = read_transactions_safe($trans_csv);
         $studentLoans = [];
@@ -131,37 +145,39 @@ try {
         exit;
     }
 
-    // 5. USER HISTORY (UPDATED FOR ADMIN BYPASS)
+    // 5. USER HISTORY (SECURE + ADMIN BYPASS)
     if ($action === 'user_history' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
         $password = $input['password'] ?? '';
 
-        // --- NEW LOGIC: ADMIN BYPASS ---
-        $isAdmin = ($password === $admin_password);
+        // --- SECURITY CHECK ---
+        $isAdmin = ($password === $admin_password); // Master Key Check
 
         if (!$isAdmin) {
-            // Normal user check
             $users = json_decode(file_get_contents($users_file), true) ?? [];
             if (isset($users[$email])) {
+                // User exists, verify password
                 if (!password_verify($password, $users[$email])) {
                     http_response_code(403);
                     echo json_encode(['error' => 'Incorrect Password']);
                     exit;
                 }
             } else {
+                 // User does not exist in DB yet
                  http_response_code(401);
                  echo json_encode(['error' => 'Account not found']);
                  exit;
             }
         }
-        // -------------------------------
+        // ----------------------
 
         $transactions = read_transactions_safe($trans_csv);
         $userHistory = [];
         $activeBooks = [];
 
         foreach ($transactions as $t) {
+            // Partial match for "Name <email>"
             if (stripos($t['Student'], $email) !== false) {
                 $userHistory[] = $t;
                 if(!isset($activeBooks[$t['Book']])) $activeBooks[$t['Book']] = 0;
@@ -188,6 +204,7 @@ try {
         $line = "\"$student\",\"$book\",\"$act\",\"$date\"\n";
         file_put_contents($trans_csv, $line, FILE_APPEND);
 
+        // Webhook Trigger
         if (!empty($n8n_webhook)) {
             $payload = json_encode(['student'=>$student, 'book'=>$book, 'action'=>$act, 'timestamp'=>$date]);
             $ch = curl_init($n8n_webhook);
@@ -195,7 +212,7 @@ try {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 1); // Fast timeout
             curl_exec($ch);
             curl_close($ch);
         }
@@ -247,4 +264,3 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 }
 ?>
-
