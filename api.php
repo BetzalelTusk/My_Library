@@ -8,7 +8,7 @@ $admin_password = "1234";
 $n8n_webhook = ""; 
 
 // SECURITY: Change this to a random 32-character string!
-$encryption_key = "CHANGE_THIS_TO_RANDOM_CHARACTERS"; 
+$encryption_key = "KUOXiGH({$/QS8sDu*~@j\E-nbW}%I=Y"; 
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
