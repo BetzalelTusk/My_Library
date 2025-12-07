@@ -5,10 +5,10 @@ $trans_csv = 'transactions.csv';
 $users_file = 'users.json'; 
 $collateral_file = 'collateral.json'; 
 $admin_password = "1234"; 
-$n8n_webhook = "https://n8n.srv1091500.hstgr.cloud/webhook-test/library-transaction"; // <--- PASTE YOUR N8N WEBHOOK URL HERe
+$n8n_webhook = ""; // <--- PASTE YOUR N8N WEBHOOK URL HERE
 
 // SECURITY: Change this to a random 32-character string!
-$encryption_key = "eNQ>4'Ns&n`qxj9N!'BQRL>KZ^HK[)]h"; 
+$encryption_key = "CHANGE_THIS_TO_RANDOM_CHARACTERS"; 
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
