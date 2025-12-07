@@ -3,12 +3,12 @@
 $book_csv = 'Mevs_English_Library 2025 - Sheet1.csv';
 $trans_csv = 'transactions.csv';
 $users_file = 'users.json'; 
-$collateral_file = 'collateral.json'; // NEW: File to store encrypted cards
+$collateral_file = 'collateral.json'; 
 $admin_password = "1234"; 
 $n8n_webhook = ""; 
 
 // SECURITY: Change this to a random 32-character string!
-$encryption_key = "KUOXiGH({$/QS8sDu*~@j\E-nbW}%I=Y"; 
+$encryption_key = "CHANGE_THIS_TO_RANDOM_CHARACTERS"; 
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -37,7 +37,7 @@ function read_transactions_safe($filename) {
     return $rows;
 }
 
-// Helper: Encryption (AES-256-CBC)
+// Helper: Encryption
 function encrypt_data($data, $key) {
     $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
     $encrypted = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
@@ -98,7 +98,7 @@ try {
         exit;
     }
 
-    // 2. GET ACTIVE USERS
+    // 2. GET ACTIVE USERS (For Check In Dropdown)
     if ($action === 'students' && $method === 'GET') {
         $transactions = read_transactions_safe($trans_csv);
         $studentLoans = [];
@@ -119,50 +119,60 @@ try {
         exit;
     }
 
-    // 3. CHECK USER STATUS
+    // 3. CHECK USER STATUS & GET NAME
     if ($action === 'check_user_status' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
         $users = json_decode(file_get_contents($users_file), true) ?? [];
         
         if (isset($users[$email])) {
-            echo json_encode(['status' => 'exists']); 
+            // Handle both old format (string hash) and new format (array with name)
+            $userData = $users[$email];
+            $name = is_array($userData) ? ($userData['name'] ?? 'Unknown') : 'Unknown';
+            echo json_encode(['status' => 'exists', 'name' => $name]); 
         } else {
             echo json_encode(['status' => 'new']);
         }
         exit;
     }
 
-    // 4. REGISTER USER
+    // 4. REGISTER USER (Updated for Full Name)
     if ($action === 'register_user' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
         $pass = $input['password'] ?? '';
+        $name = trim($input['name'] ?? '');
 
-        if(!$email || !$pass) { http_response_code(400); echo json_encode(['error'=>'Missing fields']); exit; }
+        if(!$email || !$pass || !$name) { http_response_code(400); echo json_encode(['error'=>'Missing fields']); exit; }
 
         $users = json_decode(file_get_contents($users_file), true) ?? [];
-        $users[$email] = password_hash($pass, PASSWORD_DEFAULT);
+        
+        // Store as array with hash and name
+        $users[$email] = [
+            'hash' => password_hash($pass, PASSWORD_DEFAULT),
+            'name' => $name
+        ];
         
         file_put_contents($users_file, json_encode($users));
         echo json_encode(['success' => true]);
         exit;
     }
 
-    // 5. USER HISTORY (UPDATED FOR ADMIN BYPASS)
+    // 5. USER HISTORY
     if ($action === 'user_history' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
         $password = $input['password'] ?? '';
 
-        // --- ADMIN BYPASS ---
         $isAdmin = ($password === $admin_password);
 
         if (!$isAdmin) {
-            // Normal user check
             $users = json_decode(file_get_contents($users_file), true) ?? [];
             if (isset($users[$email])) {
-                if (!password_verify($password, $users[$email])) {
+                $userData = $users[$email];
+                $hash = is_array($userData) ? $userData['hash'] : $userData; // Backward compat
+                
+                if (!password_verify($password, $hash)) {
                     http_response_code(403);
                     echo json_encode(['error' => 'Incorrect Password']);
                     exit;
@@ -173,7 +183,6 @@ try {
                  exit;
             }
         }
-        // -------------------------------
 
         $transactions = read_transactions_safe($trans_csv);
         $userHistory = [];
@@ -195,14 +204,28 @@ try {
         exit;
     }
 
-    // 6. TRANSACTION
+    // 6. TRANSACTION (Updated to Enforce Uniform Names)
     if ($action === 'transaction' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
-        $student = str_replace('"', '""', $input['student'] ?? 'Unknown');
+        $studentInput = str_replace('"', '""', $input['student'] ?? 'Unknown');
         $book = str_replace('"', '""', $input['book'] ?? 'Unknown');
         $act = $input['action'] ?? 'Error';
         $date = date("Y-m-d H:i:s");
         
+        // Logic: Input might be just email. Look up real name.
+        $email = strtolower(trim($studentInput));
+        $users = json_decode(file_get_contents($users_file), true) ?? [];
+        
+        // Check if studentInput is just an email and exists in DB
+        if(filter_var($email, FILTER_VALIDATE_EMAIL) && isset($users[$email])) {
+             $userData = $users[$email];
+             $realName = is_array($userData) ? ($userData['name'] ?? 'Unknown') : 'Student';
+             $student = "$realName <$email>"; // Force Uniform Format
+        } else {
+             // Fallback for legacy or manual inputs (Check In)
+             $student = $studentInput;
+        }
+
         $line = "\"$student\",\"$book\",\"$act\",\"$date\"\n";
         file_put_contents($trans_csv, $line, FILE_APPEND);
 
@@ -222,12 +245,14 @@ try {
         exit;
     }
 
-    // 7. ADMIN ACTIVE
+    // 7. ADMIN ACTIVE (Updated for Collateral & Countdown)
     if ($action === 'admin_active' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         if (($input['password'] ?? '') !== $admin_password) { http_response_code(403); exit; }
         
         $transactions = read_transactions_safe($trans_csv);
+        $collateralDB = json_decode(file_get_contents($collateral_file), true) ?? [];
+
         $activeMap = [];
         foreach ($transactions as $t) {
             $key = $t['Student'] . '|' . $t['Book'];
@@ -237,13 +262,38 @@ try {
         
         $result = [];
         $now = new DateTime();
+        
         foreach ($activeMap as $key => $dateStr) {
             $parts = explode('|', $key);
-            $student = $parts[0] ?? 'Unknown';
+            $studentStr = $parts[0] ?? 'Unknown';
             $book = $parts[1] ?? 'Unknown';
+            
+            // Parse Email for Collateral Check
+            $email = '';
+            if (preg_match('/<(.*)>/', $studentStr, $matches)) {
+                $email = strtolower($matches[1]);
+            }
+
             try { $borrowDate = new DateTime($dateStr); } catch (Exception $e) { $borrowDate = $now; }
             $diff = $now->diff($borrowDate)->days;
-            $result[] = ['student'=>$student, 'book'=>$book, 'date'=>$dateStr, 'daysHeld'=>$diff, 'isOverdue'=>$diff > 14];
+            
+            // Logic: 14 Day Loan Period
+            $daysLeft = 14 - $diff;
+            $isOverdue = $daysLeft < 0;
+            
+            // Check Collateral
+            $hasCollateral = !empty($email) && isset($collateralDB[$email]);
+
+            $result[] = [
+                'student' => $studentStr, 
+                'email' => $email,
+                'book' => $book, 
+                'date' => $dateStr, 
+                'daysHeld' => $diff,
+                'daysLeft' => $daysLeft,
+                'isOverdue' => $isOverdue,
+                'hasCollateral' => $hasCollateral
+            ];
         }
         echo json_encode($result);
         exit;
@@ -258,7 +308,7 @@ try {
         exit;
     }
 
-    // 9. SAVE COLLATERAL (Goal 3)
+    // 9. SAVE COLLATERAL
     if ($action === 'save_collateral' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
@@ -278,7 +328,7 @@ try {
         exit;
     }
 
-    // 10. GET COLLATERAL (Goal 3 - Admin Only)
+    // 10. GET COLLATERAL
     if ($action === 'get_collateral' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         if (($input['password'] ?? '') !== $admin_password) { http_response_code(403); exit; }
