@@ -106,12 +106,9 @@
                         </div>
                         <hr class="border-slate-100">
                         <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Full Name</label>
-                            <input type="text" id="borrowName" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. John Doe">
-                        </div>
-                        <div>
                             <label class="text-xs font-bold uppercase text-slate-400 ml-1">Student Email</label>
-                            <input type="email" id="borrowEmail" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. john@email.com">
+                            <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. john@email.com">
+                            <p id="borrowIdentityMsg" class="text-xs mt-2 font-bold text-indigo-600 hidden">Welcome, <span id="borrowIdentityName"></span></p>
                         </div>
                         <div>
                             <label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label>
@@ -156,6 +153,12 @@
                     <div id="authStep2" class="hidden mt-4">
                         <div class="flex flex-col gap-2">
                             <p id="authMessage" class="text-sm font-medium text-slate-600">Please enter your password:</p>
+                            
+                            <div id="authNameField" class="hidden mb-2">
+                                <label class="text-xs font-bold uppercase text-slate-400 ml-1">Full Name</label>
+                                <input type="text" id="authNameInput" class="block w-full p-3 border border-slate-200 rounded-xl" placeholder="e.g. John Doe">
+                            </div>
+
                             <div class="flex gap-4">
                                 <input type="password" id="authPassword" class="flex-1 p-3 border border-slate-200 rounded-xl" placeholder="••••••••">
                                 <button id="authBtnAction" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700">View History</button>
@@ -202,7 +205,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
                                 <thead class="bg-slate-50 text-xs uppercase text-slate-400">
-                                    <tr><th class="p-2 text-left">Name</th><th class="p-2 text-left">Email</th><th class="p-2 text-left">Book</th><th class="p-2 text-left">Days</th></tr>
+                                    <tr><th class="p-2 text-left">Name</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Book</th><th class="p-2 text-left">Due In</th></tr>
                                 </thead>
                                 <tbody id="adminActiveTable"></tbody>
                             </table>
@@ -308,7 +311,7 @@
             renderTable(allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term)));
         }
 
-        // --- BARCODE HANDLER (Goal 1 Fixed) ---
+        // --- BARCODE HANDLER ---
         function handleBarcode(event, type) {
             if (event.key !== 'Enter') return;
             event.preventDefault(); 
@@ -330,7 +333,7 @@
 
                 if(select.value === book.name) {
                     event.target.value = ''; 
-                    document.getElementById('borrowName').focus(); 
+                    document.getElementById('borrowEmail').focus(); 
                     showToast('Scanned: ' + book.name);
                 } else { 
                     showToast('Book out of stock or not in catalog', 'error'); 
@@ -353,16 +356,18 @@
             }
         }
 
-        // --- USER AUTH & HISTORY (Goal 2 Fixed) ---
+        // --- USER AUTH & REGISTRATION ---
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
             document.getElementById('authStep2').classList.add('hidden');
             document.getElementById('authStep1').classList.remove('hidden');
+            document.getElementById('authNameField').classList.add('hidden'); // Hide name by default
             
             const emailInput = document.getElementById('authEmail');
             emailInput.disabled = false;
             emailInput.value = '';
             document.getElementById('authPassword').value = '';
+            document.getElementById('authNameInput').value = '';
             document.getElementById('authMessage').className = 'text-sm font-medium text-slate-600';
             setTimeout(() => emailInput.focus(), 100);
         }
@@ -387,33 +392,28 @@
                 document.getElementById('authStep2').classList.remove('hidden');
                 document.getElementById('authEmail').disabled = true; 
                 
-                const passInput = document.getElementById('authPassword');
-                passInput.focus();
-                
                 const btn = document.getElementById('authBtnAction');
                 const msg = document.getElementById('authMessage');
 
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
 
-                const newPassInput = passInput.cloneNode(true);
-                passInput.parentNode.replaceChild(newPassInput, passInput);
-
                 if(data.status === 'exists') {
+                    // LOGIN FLOW
                     msg.innerHTML = "Welcome back! Enter password:";
+                    document.getElementById('authPassword').focus();
                     newBtn.innerText = "Login & View History";
                     newBtn.className = "px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700";
-                    const loginAction = () => performLogin(email);
-                    newBtn.onclick = loginAction;
-                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') loginAction(); };
+                    newBtn.onclick = () => performLogin(email);
 
                 } else {
-                    msg.innerHTML = "<span class='text-emerald-600 font-bold'>New Member!</span> Create a password:";
+                    // REGISTRATION FLOW
+                    msg.innerHTML = "<span class='text-emerald-600 font-bold'>New Member!</span> Complete registration:";
+                    document.getElementById('authNameField').classList.remove('hidden'); // SHOW NAME FIELD
+                    document.getElementById('authNameInput').focus();
                     newBtn.innerText = "Create Account";
                     newBtn.className = "px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700";
-                    const regAction = () => performRegistration(email);
-                    newBtn.onclick = regAction;
-                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
+                    newBtn.onclick = () => performRegistration(email);
                 }
             } catch (e) {
                 showToast("Connection Error", "error");
@@ -425,7 +425,8 @@
 
         async function performRegistration(email) {
             const password = document.getElementById('authPassword').value;
-            if(!password) return showToast("Password cannot be empty", 'error');
+            const name = document.getElementById('authNameInput').value;
+            if(!password || !name) return showToast("All fields required", 'error');
 
             const btn = document.getElementById('authBtnAction');
             const originalText = btn.innerText;
@@ -436,7 +437,7 @@
                 const res = await fetch('api.php?action=register_user', {
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password, name })
                 });
                 
                 if(res.ok) {
@@ -512,14 +513,33 @@
             }).join('');
         }
 
-        function inspectUser(email) {
-            showPage('myaccount');
-            document.getElementById('authEmail').value = email;
-            performLogin(email, adminPassword);
-            showToast("Inspecting " + email);
+        // --- CHECK OUT IDENTIFICATION ---
+        async function identifyUser() {
+            const email = document.getElementById('borrowEmail').value;
+            const msg = document.getElementById('borrowIdentityMsg');
+            const nameSpan = document.getElementById('borrowIdentityName');
+            
+            if(!email) { msg.classList.add('hidden'); return; }
+
+            const res = await fetch('api.php?action=check_user_status', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ email }) 
+            });
+            const data = await res.json();
+            
+            if(data.status === 'exists') {
+                msg.classList.remove('hidden', 'text-rose-600');
+                msg.classList.add('text-indigo-600');
+                msg.innerHTML = `Welcome, ${data.name}`;
+            } else {
+                msg.classList.remove('hidden', 'text-indigo-600');
+                msg.classList.add('text-rose-600');
+                msg.innerHTML = `User not found. Register first!`;
+            }
         }
 
-        // --- COLLATERAL SYSTEM (Goal 3) ---
+        // --- COLLATERAL SYSTEM ---
         function openCollateralModal() {
             document.getElementById('collateralModal').classList.remove('hidden');
         }
@@ -569,6 +589,13 @@
                 alert("No collateral on file for this user.");
             }
         }
+        
+        function inspectUser(email) {
+            showPage('myaccount');
+            document.getElementById('authEmail').value = email;
+            performLogin(email, adminPassword);
+            showToast("Inspecting " + email);
+        }
 
         // --- ADMIN ---
         function checkAdmin() {
@@ -591,14 +618,25 @@
                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">No active loans.</td></tr>'; 
             } else {
                 tbody.innerHTML = loans.map(l => {
-                    const rowClass = l.isOverdue ? 'bg-rose-50 text-rose-700 font-bold' : 'text-slate-600';
-                    const icon = l.isOverdue ? '<i class="ph-fill ph-warning text-rose-500"></i>' : '';
-                    let name = l.student, email = "-";
-                    const match = l.student.match(/(.*) <(.*)>/);
-                    if(match) { name = match[1]; email = match[2]; }
+                    const rowClass = l.isOverdue ? 'bg-rose-50' : '';
+                    
+                    let name = l.student; 
+                    let email = l.email; 
 
-                    // Updated to include COLLATERAL BUTTON (Goal 3)
-                    return `<tr class="${rowClass} border-b border-slate-50 last:border-0"><td class="p-2"><button onclick="inspectUser('${email}')" class="text-indigo-600 hover:underline font-bold text-left">${name}</button></td><td class="p-2 text-xs text-slate-500 flex items-center gap-1">${email} <button onclick="checkCollateral('${email}')" class="text-xs text-indigo-400 hover:text-indigo-700" title="View Collateral"><i class="ph-bold ph-credit-card"></i></button></td><td class="p-2">${l.book}</td><td class="p-2 flex items-center gap-2">${l.daysHeld} days ${icon}</td></tr>`;
+                    // Countdown Logic
+                    const dayLabel = l.isOverdue ? `<span class="text-rose-600 font-bold">OVERDUE +${Math.abs(l.daysLeft)} days</span>` : `<span class="text-emerald-600 font-bold">${l.daysLeft} days left</span>`;
+                    
+                    // Collateral Logic
+                    const cardIcon = l.hasCollateral 
+                        ? `<button onclick="checkCollateral('${email}')" class="text-purple-600 hover:text-purple-800" title="View Collateral"><i class="ph-fill ph-credit-card"></i></button>`
+                        : `<button class="text-rose-300 cursor-not-allowed" title="No Collateral"><i class="ph-fill ph-warning-circle"></i></button>`;
+
+                    return `<tr class="${rowClass} border-b border-slate-50 last:border-0">
+                        <td class="p-2"><button onclick="inspectUser('${email}')" class="text-indigo-600 hover:underline font-bold text-left">${name}</button></td>
+                        <td class="p-2 text-xl">${cardIcon}</td>
+                        <td class="p-2 text-sm">${l.book}</td>
+                        <td class="p-2 text-xs">${dayLabel}</td>
+                    </tr>`;
                 }).join('');
             }
         }
@@ -642,11 +680,10 @@
         async function submitTransaction(action) {
             let student = "", book = "";
             if (action === 'Borrow') {
-                const name = document.getElementById('borrowName').value;
                 const email = document.getElementById('borrowEmail').value;
                 book = document.getElementById('borrowBookSelect').value;
-                if(!name || !email || !book) return showToast('Fill all fields', 'error');
-                student = `${name} <${email}>`;
+                if(!email || !book) return showToast('Fill all fields', 'error');
+                student = email; // Send email, backend resolves name
             } else {
                 student = document.getElementById('returnStudentSelect').value;
                 book = document.getElementById('returnBookSelect').value;
@@ -655,7 +692,7 @@
             const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student, book, action }) });
             if(res.ok) {
                 showToast(action + ' Success');
-                if(action === 'Borrow') { document.getElementById('borrowName').value = ''; document.getElementById('borrowEmail').value = ''; loadBorrowList(); }
+                if(action === 'Borrow') { document.getElementById('borrowEmail').value = ''; document.getElementById('borrowIdentityMsg').classList.add('hidden'); loadBorrowList(); }
                 else loadReturnList();
             } else showToast('Error', 'error');
         }
