@@ -286,79 +286,159 @@
                 }
             }
         }
-        // USER AUTH
+       // --- USER AUTH & HISTORY ---
+        
+        // Reset the UI when clicking the "My History" tab
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
             document.getElementById('authStep2').classList.add('hidden');
-            document.getElementById('authStep1').classList.remove('hidden'); 
-            document.getElementById('authEmail').disabled = false;
-            document.getElementById('authEmail').value = '';
+            document.getElementById('authStep1').classList.remove('hidden');
+            
+            const emailInput = document.getElementById('authEmail');
+            emailInput.disabled = false;
+            emailInput.value = '';
             document.getElementById('authPassword').value = '';
+            document.getElementById('authMessage').className = 'text-sm font-medium text-slate-600';
+            
+            // Focus on email for quick entry
+            setTimeout(() => emailInput.focus(), 100);
         }
 
+        // Step 1: Check if the user exists
         async function checkUserStatus() {
-            const email = document.getElementById('authEmail').value;
-            if(!email) return showToast("Enter email", 'error');
+            const email = document.getElementById('authEmail').value.trim();
+            if(!email) return showToast("Please enter your email", 'error');
+
+            // Visual feedback that it's loading
+            const nextBtn = document.querySelector('#authStep1 button');
+            const originalText = nextBtn.innerText;
+            nextBtn.innerText = "Checking...";
+
             try {
-                const res = await fetch('api.php?action=check_user_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) });
+                const res = await fetch('api.php?action=check_user_status', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ email }) 
+                });
                 const data = await res.json();
+
+                // UI Transitions
                 document.getElementById('authStep2').classList.remove('hidden');
-                document.getElementById('authEmail').disabled = true;
+                document.getElementById('authEmail').disabled = true; // Lock email
+                document.getElementById('authPassword').focus(); // Auto-focus password
+                
                 const btn = document.getElementById('authBtnAction');
                 const msg = document.getElementById('authMessage');
-                if(data.status === 'exists') { msg.innerHTML = "Enter your password:"; btn.innerText = "Login & View"; btn.onclick = () => loadUserHistory(false); } 
-                else { msg.innerHTML = "New Account! Create a password:"; btn.innerText = "Register & View"; btn.onclick = () => loadUserHistory(true); }
-            } catch(e) { showToast("Connection Error", 'error'); }
+
+                // Clear previous listeners to prevent double-firing
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+
+                if(data.status === 'exists') {
+                    msg.innerHTML = "Welcome back! Enter password:";
+                    newBtn.innerText = "Login & View History";
+                    newBtn.className = "px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700";
+                    newBtn.onclick = () => performLogin(email);
+                } else {
+                    msg.innerHTML = "<span class='text-emerald-600 font-bold'>New Member!</span> Create a password:";
+                    newBtn.innerText = "Create Account";
+                    newBtn.className = "px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700";
+                    newBtn.onclick = () => performRegistration(email);
+                }
+            } catch (e) {
+                showToast("Connection Error", "error");
+            } finally {
+                nextBtn.innerText = originalText;
+            }
         }
 
-        async function loadUserHistory(isRegistering, overridePassword = null) {
-            const email = document.getElementById('authEmail').value;
-            const password = overridePassword || document.getElementById('authPassword').value;
-            if(!password) return showToast("Password required", 'error');
+        // Step 2a: Register New User
+        async function performRegistration(email) {
+            const password = document.getElementById('authPassword').value;
+            if(!password) return showToast("Password cannot be empty", 'error');
+
             try {
-                if(isRegistering) {
-                    await fetch('api.php?action=register_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
+                const res = await fetch('api.php?action=register_user', {
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if(res.ok) {
+                    showToast("Account Created! Logging in...");
+                    // Immediately log them in after success
+                    performLogin(email);
+                } else {
+                    showToast("Registration Failed", 'error');
                 }
-                const res = await fetch('api.php?action=user_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
-                if(res.status === 403 || res.status === 401) { showToast("Incorrect Password", 'error'); } 
-                else {
-                    const data = await res.json();
-                    document.getElementById('myHistoryResults').classList.remove('hidden');
-                    const activeDiv = document.getElementById('myActiveList');
-                    activeDiv.innerHTML = data.active.length === 0 ? '<li>No books borrowed.</li>' : data.active.map(b => `<li class="font-bold">• ${b}</li>`).join('');
-                    document.getElementById('myHistoryTable').innerHTML = data.history.map(h => `<tr><td class="p-3 text-xs text-slate-500">${h.Date}</td><td class="p-3 font-bold ${h.Action==='Borrow'?'text-indigo-600':'text-emerald-600'}">${h.Action}</td><td class="p-3">${h.Book}</td></tr>`).join('');
-                }
-            } catch(e) { showToast("Error loading history", 'error'); }
+            } catch(e) { console.error(e); }
         }
 
-        // ADMIN
-        function checkAdmin() { if (adminPassword) showPage('admin'); else document.getElementById('loginOverlay').classList.remove('hidden'); }
-        function closeLogin() { document.getElementById('loginOverlay').classList.add('hidden'); }
-        async function attemptLogin() {
-            const pass = document.getElementById('adminPassInput').value;
-            const res = await fetch('api.php?action=admin_active', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: pass }) });
-            if(res.status === 403) document.getElementById('loginError').classList.remove('hidden');
-            else { adminPassword = pass; closeLogin(); loadAdminData(await res.json()); loadHistory(); showPage('admin'); }
+        // Step 2b: Login & Fetch History
+        // NOTE: accept optional 'overridePassword' for Admin Mode
+        async function performLogin(email, overridePassword = null) {
+            const password = overridePassword || document.getElementById('authPassword').value;
+            if(!password) return showToast("Enter Password", 'error');
+
+            try {
+                const res = await fetch('api.php?action=user_history', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ email, password }) 
+                });
+                
+                if(res.status === 403 || res.status === 401) {
+                    showToast("Incorrect Password", 'error');
+                    document.getElementById('authPassword').value = '';
+                    document.getElementById('authPassword').focus();
+                } else {
+                    const data = await res.json();
+                    renderHistory(data);
+                }
+            } catch(e) { showToast("System Error", 'error'); }
         }
-        function logoutAdmin() { adminPassword = ""; showPage('catalog'); }
-        
-        function loadAdminData(loans) {
-            document.getElementById('adminActiveTable').innerHTML = loans.length === 0 ? '<tr><td colspan="4" class="p-4 text-center">No active loans.</td></tr>' : loans.map(l => {
-                let name = l.student, email = "-";
-                const match = l.student.match(/(.*) <(.*)>/);
-                if(match) { name = match[1]; email = match[2]; }
-                return `<tr class="border-b"><td class="p-2"><button onclick="inspectUser('${email}')" class="text-indigo-600 hover:underline font-bold text-left">${name}</button></td><td class="p-2 text-xs">${email}</td><td class="p-2">${l.book}</td><td class="p-2">${l.daysHeld} days ${l.isOverdue?'⚠️':''}</td></tr>`;
+
+        function renderHistory(data) {
+            // Hide Auth UI, Show Results
+            document.getElementById('authStep1').classList.add('hidden');
+            document.getElementById('authStep2').classList.add('hidden');
+            document.getElementById('myHistoryResults').classList.remove('hidden');
+            
+            const activeDiv = document.getElementById('myActiveList');
+            if(data.active.length === 0) {
+                activeDiv.innerHTML = '<li class="text-slate-500 italic">No books currently borrowed.</li>';
+            } else {
+                activeDiv.innerHTML = data.active.map(b => `<li class="font-bold flex items-center gap-2"><i class="ph-fill ph-book text-indigo-500"></i> ${b}</li>`).join('');
+            }
+
+            document.getElementById('myHistoryTable').innerHTML = data.history.map(h => {
+                const isBorrow = h.Action === 'Borrow';
+                const color = isBorrow ? 'text-indigo-600 bg-indigo-50' : 'text-emerald-600 bg-emerald-50';
+                const icon = isBorrow ? 'ph-upload-simple' : 'ph-download-simple';
+                
+                return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-4 text-slate-500 text-xs font-mono">${h.Date}</td>
+                    <td class="p-4"><span class="${color} px-2 py-1 rounded text-xs font-bold uppercase flex w-fit items-center gap-1"><i class="ph-bold ${icon}"></i> ${h.Action}</span></td>
+                    <td class="p-4 font-medium text-slate-700">${h.Book}</td>
+                </tr>`;
             }).join('');
         }
 
+        // --- UPDATED ADMIN INSPECT FUNCTION ---
+        // This was broken before because 'myHistoryEmail' didn't exist.
         function inspectUser(email) {
             showPage('myaccount');
-            document.getElementById('authStep1').classList.add('hidden');
-            document.getElementById('authStep2').classList.add('hidden');
+            
+            // 1. Pre-fill the standard email box
             document.getElementById('authEmail').value = email;
-            loadUserHistory(false, adminPassword); // Admin Bypass
+            
+            // 2. Bypass the "Check Status" button and immediately fetch history
+            // We use the adminPassword (global variable) to bypass the user's password check
+            performLogin(email, adminPassword);
+            
+            showToast("Inspecting " + email);
         }
-
         async function loadHistory() {
             const res = await fetch('api.php?action=admin_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) });
             const history = await res.json();
