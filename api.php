@@ -1,39 +1,29 @@
 <?php
 // --- CONFIGURATION ---
-// Ensure this filename matches your uploaded CSV exactly!
 $book_csv = 'Mevs_English_Library 2025 - Sheet1.csv';
 $trans_csv = 'transactions.csv';
-$users_file = 'users.json';
-$admin_password = "1234"; // <--- CHANGE THIS FOR SECURITY
-$n8n_webhook = ""; // Paste your n8n URL here if you have one
+$users_file = 'users.json'; 
+$collateral_file = 'collateral.json'; // NEW: File to store encrypted cards
+$admin_password = "1234"; 
+$n8n_webhook = ""; 
 
-// --- ERROR HANDLING & HEADERS ---
+// SECURITY: Change this to a random 32-character string!
+$encryption_key = "CHANGE_THIS_TO_RANDOM_CHARACTERS"; 
+
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Keep 0 for production to avoid breaking JSON
+ini_set('display_errors', 0);
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST');
-header('Access-Control-Allow-Headers: Content-Type');
 
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
-// --- SELF-HEALING (Create files if missing) ---
-if (!file_exists($trans_csv)) {
-    file_put_contents($trans_csv, "Student,Book,Action,Date\n");
-}
-if (!file_exists($users_file)) {
-    file_put_contents($users_file, "{}");
-}
-
-// --- HELPERS ---
+// Helper: Safely Read CSV
 function read_transactions_safe($filename) {
     $rows = [];
     if (file_exists($filename) && ($handle = fopen($filename, "r")) !== FALSE) {
-        $header = fgetcsv($handle); // Skip header
+        $header = fgetcsv($handle); 
         while (($data = fgetcsv($handle)) !== FALSE) {
             if(count($data) >= 4) {
-                // [0]Student (Name <Email>), [1]Book, [2]Action, [3]Date
                 $rows[] = [
                     'Student' => $data[0] ?? 'Unknown', 
                     'Book' => $data[1] ?? 'Unknown', 
@@ -47,6 +37,23 @@ function read_transactions_safe($filename) {
     return $rows;
 }
 
+// Helper: Encryption (AES-256-CBC)
+function encrypt_data($data, $key) {
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+    $encrypted = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
+    return base64_encode($encrypted . '::' . $iv);
+}
+
+function decrypt_data($data, $key) {
+    list($encrypted_data, $iv) = explode('::', base64_decode($data), 2);
+    return openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, 0, $iv);
+}
+
+// File Checks
+if (!file_exists($trans_csv)) file_put_contents($trans_csv, "Student,Book,Action,Date\n");
+if (!file_exists($users_file)) file_put_contents($users_file, "{}");
+if (!file_exists($collateral_file)) file_put_contents($collateral_file, "{}");
+
 // --- ROUTER ---
 
 try {
@@ -55,13 +62,10 @@ try {
     if ($action === 'books' && $method === 'GET') {
         $books_raw = [];
         if (file_exists($book_csv) && ($handle = fopen($book_csv, "r")) !== FALSE) {
-            fgetcsv($handle); // Skip Header
+            fgetcsv($handle); 
             while (($data = fgetcsv($handle)) !== FALSE) {
-                // Ensure row has data
-                if(isset($data[0]) && trim($data[0]) !== '') { 
-                    // Fix: If copies column is empty, default to 1
-                    $copies = (isset($data[4]) && $data[4] !== '') ? (int)$data[4] : 1;
-                    
+                if(isset($data[0]) && $data[0] !== '') { 
+                    $copies = (!empty($data[4])) ? (int)$data[4] : 1;
                     $books_raw[] = [
                         'id' => $data[0],
                         'name' => $data[1] ?? 'Unknown',
@@ -94,7 +98,7 @@ try {
         exit;
     }
 
-    // 2. GET ACTIVE STUDENTS
+    // 2. GET ACTIVE USERS
     if ($action === 'students' && $method === 'GET') {
         $transactions = read_transactions_safe($trans_csv);
         $studentLoans = [];
@@ -145,39 +149,37 @@ try {
         exit;
     }
 
-    // 5. USER HISTORY (SECURE + ADMIN BYPASS)
+    // 5. USER HISTORY (UPDATED FOR ADMIN BYPASS)
     if ($action === 'user_history' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
         $password = $input['password'] ?? '';
 
-        // --- SECURITY CHECK ---
-        $isAdmin = ($password === $admin_password); // Master Key Check
+        // --- ADMIN BYPASS ---
+        $isAdmin = ($password === $admin_password);
 
         if (!$isAdmin) {
+            // Normal user check
             $users = json_decode(file_get_contents($users_file), true) ?? [];
             if (isset($users[$email])) {
-                // User exists, verify password
                 if (!password_verify($password, $users[$email])) {
                     http_response_code(403);
                     echo json_encode(['error' => 'Incorrect Password']);
                     exit;
                 }
             } else {
-                 // User does not exist in DB yet
                  http_response_code(401);
                  echo json_encode(['error' => 'Account not found']);
                  exit;
             }
         }
-        // ----------------------
+        // -------------------------------
 
         $transactions = read_transactions_safe($trans_csv);
         $userHistory = [];
         $activeBooks = [];
 
         foreach ($transactions as $t) {
-            // Partial match for "Name <email>"
             if (stripos($t['Student'], $email) !== false) {
                 $userHistory[] = $t;
                 if(!isset($activeBooks[$t['Book']])) $activeBooks[$t['Book']] = 0;
@@ -204,7 +206,6 @@ try {
         $line = "\"$student\",\"$book\",\"$act\",\"$date\"\n";
         file_put_contents($trans_csv, $line, FILE_APPEND);
 
-        // Webhook Trigger
         if (!empty($n8n_webhook)) {
             $payload = json_encode(['student'=>$student, 'book'=>$book, 'action'=>$act, 'timestamp'=>$date]);
             $ch = curl_init($n8n_webhook);
@@ -212,7 +213,7 @@ try {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 1); // Fast timeout
+            curl_setopt($ch, CURLOPT_TIMEOUT, 1);
             curl_exec($ch);
             curl_close($ch);
         }
@@ -254,6 +255,43 @@ try {
         if (($input['password'] ?? '') !== $admin_password) { http_response_code(403); exit; }
         $transactions = read_transactions_safe($trans_csv);
         echo json_encode(array_reverse($transactions));
+        exit;
+    }
+
+    // 9. SAVE COLLATERAL (Goal 3)
+    if ($action === 'save_collateral' && $method === 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $email = strtolower(trim($input['email'] ?? ''));
+        $cardData = $input['cardData'] ?? ''; 
+
+        if (!$email || !$cardData) { http_response_code(400); exit; }
+
+        $encrypted = encrypt_data($cardData, $encryption_key);
+        $db = json_decode(file_get_contents($collateral_file), true) ?? [];
+        $db[$email] = [
+            'data' => $encrypted,
+            'updated' => date("Y-m-d H:i:s")
+        ];
+
+        file_put_contents($collateral_file, json_encode($db));
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // 10. GET COLLATERAL (Goal 3 - Admin Only)
+    if ($action === 'get_collateral' && $method === 'POST') {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (($input['password'] ?? '') !== $admin_password) { http_response_code(403); exit; }
+
+        $targetEmail = strtolower(trim($input['email'] ?? ''));
+        $db = json_decode(file_get_contents($collateral_file), true) ?? [];
+
+        if (isset($db[$targetEmail])) {
+            $decrypted = decrypt_data($db[$targetEmail]['data'], $encryption_key);
+            echo json_encode(['found' => true, 'details' => $decrypted, 'date' => $db[$targetEmail]['updated']]);
+        } else {
+            echo json_encode(['found' => false]);
+        }
         exit;
     }
 
