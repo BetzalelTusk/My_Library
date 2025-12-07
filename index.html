@@ -230,26 +230,62 @@
         }
 
         function handleBarcode(event, type) {
+            // 1. USB Scanners send 'Enter' at the end. We catch it here.
             if (event.key !== 'Enter') return;
+            
+            // 2. CRITICAL: Stop the page from refreshing or submitting a form automatically
+            event.preventDefault(); 
+            
             const code = event.target.value.trim();
             if (!code) return;
+
+            // 3. Find the book in your loaded catalog
             const book = allBooks.find(b => String(b.id) === code);
-            if (!book) { showToast("Barcode ID " + code + " not found!", 'error'); event.target.value = ''; return; }
+            
+            if (!book) { 
+                showToast("Barcode ID " + code + " not found!", 'error'); 
+                event.target.value = ''; // Clear input to let them try again
+                return; 
+            }
+
             if (type === 'borrow') {
-                document.getElementById('borrowBookSelect').value = book.name;
-                if(document.getElementById('borrowBookSelect').value === book.name) { event.target.value = ''; document.getElementById('borrowName').focus(); showToast(book.name + ' selected'); } 
-                else { showToast('Book out of stock', 'error'); }
+                const select = document.getElementById('borrowBookSelect');
+                select.value = book.name;
+
+                // Check if the select actually updated (meaning the book is available/in the list)
+                if(select.value === book.name) {
+                    // Success: Clear the scanner field so it's clean
+                    event.target.value = ''; 
+                    
+                    // UX Decision: Move focus to Name field so you can type the student immediately
+                    document.getElementById('borrowName').focus(); 
+                    
+                    showToast('Scanned: ' + book.name);
+                } else { 
+                    showToast('Book out of stock or not in catalog', 'error'); 
+                    event.target.value = ''; // Clear for next attempt
+                }
+
             } else if (type === 'return') {
+                // Logic: Find which student has this book
                 const student = activeStudents.find(s => s.books.includes(book.name));
+                
                 if (student) {
                     document.getElementById('returnStudentSelect').value = student.name;
-                    updateReturnBooks();
+                    updateReturnBooks(); // Trigger the filter
                     document.getElementById('returnBookSelect').value = book.name;
-                    event.target.value = ''; showToast('Return matched');
-                } else { showToast('Book not checked out', 'error'); }
+                    
+                    event.target.value = ''; 
+                    showToast('Matched: ' + student.name);
+                    
+                    // Optional: You could auto-submit here if you trust the scanner 100%
+                    // submitTransaction('Return'); 
+                } else { 
+                    showToast('This book is not currently checked out', 'error'); 
+                    event.target.value = '';
+                }
             }
         }
-
         // USER AUTH
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
