@@ -17,8 +17,8 @@
         .fade-enter { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .glass-overlay { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); }
-        /* Fix for User Portal display issues */
-        #authStep1 { display: flex; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex overflow-hidden font-sans">
@@ -42,9 +42,12 @@
                 <button onclick="showPage('return', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
                     <i class="ph ph-download-simple text-lg"></i> Check In
                 </button>
-                <button onclick="showPage('myaccount', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all">
-                    <i class="ph ph-user-circle text-lg"></i> User Portal
-                </button>
+                
+                <div class="pt-4 mt-2 border-t border-slate-50">
+                    <button onclick="showPage('myaccount', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all">
+                        <i class="ph ph-user-circle text-lg"></i> My History
+                    </button>
+                </div>
             </nav>
         </div>
 
@@ -71,7 +74,7 @@
             <div class="flex gap-6 hidden sm:flex">
                 <div class="text-right">
                     <p class="text-xs text-slate-400 uppercase font-semibold">Total Books</p>
-                    <p id="statTotal" class="font-bold text-slate-700">Loading...</p>
+                    <p id="statTotal" class="font-bold text-slate-700">...</p>
                 </div>
             </div>
         </header>
@@ -80,7 +83,9 @@
             
             <div id="catalog" class="page-section fade-enter max-w-6xl mx-auto">
                 <div class="relative group mb-6">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="ph ph-magnifying-glass text-slate-400 text-xl"></i></div>
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="ph ph-magnifying-glass text-slate-400 text-xl"></i>
+                    </div>
                     <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full pl-12 pr-4 py-4 bg-white border-0 rounded-2xl shadow-sm ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500" placeholder="Search by title or barcode...">
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -95,12 +100,24 @@
                 <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full max-w-lg">
                     <h2 class="text-2xl font-bold text-center mb-6">Check Out Book</h2>
                     <div class="space-y-4">
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Barcode</label><input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono tracking-widest text-lg focus:ring-2 focus:ring-indigo-500" placeholder="Scan..."></div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Barcode Scan</label>
+                            <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono tracking-widest text-lg focus:ring-2 focus:ring-indigo-500" placeholder="Scan...">
+                        </div>
                         <hr class="border-slate-100">
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Full Name</label><input type="text" id="borrowName" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="John Doe"></div>
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Student Email</label><input type="email" id="borrowEmail" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="john@email.com"></div>
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label><select id="borrowBookSelect" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"></select></div>
-                        <button onclick="submitTransaction('Borrow')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">Confirm</button>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Full Name</label>
+                            <input type="text" id="borrowName" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. John Doe">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Student Email</label>
+                            <input type="email" id="borrowEmail" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. john@email.com">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label>
+                            <select id="borrowBookSelect" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"></select>
+                        </div>
+                        <button onclick="submitTransaction('Borrow')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">Confirm Check Out</button>
                     </div>
                 </div>
             </div>
@@ -109,11 +126,20 @@
                 <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full max-w-lg">
                     <h2 class="text-2xl font-bold text-center mb-6">Check In Book</h2>
                     <div class="space-y-4">
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Barcode</label><input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono tracking-widest text-lg focus:ring-2 focus:ring-emerald-500" placeholder="Scan..."></div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Barcode Scan</label>
+                            <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono tracking-widest text-lg focus:ring-2 focus:ring-emerald-500" placeholder="Scan...">
+                        </div>
                         <hr class="border-slate-100">
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Student</label><select id="returnStudentSelect" onchange="updateReturnBooks()" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"></select></div>
-                        <div><label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label><select id="returnBookSelect" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"></select></div>
-                        <button onclick="submitTransaction('Return')" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">Confirm</button>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Student</label>
+                            <select id="returnStudentSelect" onchange="updateReturnBooks()" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label>
+                            <select id="returnBookSelect" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"></select>
+                        </div>
+                        <button onclick="submitTransaction('Return')" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">Confirm Check In</button>
                     </div>
                 </div>
             </div>
@@ -129,7 +155,7 @@
 
                     <div id="authStep2" class="hidden mt-4">
                         <div class="flex flex-col gap-2">
-                            <p id="authMessage" class="text-sm font-medium text-slate-600">Enter password:</p>
+                            <p id="authMessage" class="text-sm font-medium text-slate-600">Please enter your password:</p>
                             <div class="flex gap-4">
                                 <input type="password" id="authPassword" class="flex-1 p-3 border border-slate-200 rounded-xl" placeholder="••••••••">
                                 <button id="authBtnAction" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700">View History</button>
@@ -143,9 +169,15 @@
                         <h4 class="font-bold text-indigo-900 mb-3 flex items-center gap-2"><i class="ph-fill ph-book-bookmark"></i> Currently Borrowed</h4>
                         <ul id="myActiveList" class="space-y-2 text-sm text-indigo-800"></ul>
                     </div>
+                    
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                         <h4 class="font-bold text-slate-800 mb-4">Full History</h4>
-                        <div class="overflow-x-auto"><table class="w-full text-sm text-left"><thead class="text-xs text-slate-400 uppercase bg-slate-50"><tr><th class="p-3">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead><tbody id="myHistoryTable" class="divide-y divide-slate-100"></tbody></table></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-400 uppercase bg-slate-50"><tr><th class="p-3">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead>
+                                <tbody id="myHistoryTable" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -161,14 +193,29 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                         <h4 class="font-bold mb-4 text-orange-600">Active Loans</h4>
-                        <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-2 text-left">Name</th><th class="p-2 text-left">Email</th><th class="p-2 text-left">Book</th><th class="p-2 text-left">Days</th></tr></thead><tbody id="adminActiveTable"></tbody></table></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+                                    <tr><th class="p-2 text-left">Name</th><th class="p-2 text-left">Email</th><th class="p-2 text-left">Book</th><th class="p-2 text-left">Days</th></tr>
+                                </thead>
+                                <tbody id="adminActiveTable"></tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                        <h4 class="font-bold mb-4 text-slate-700">History</h4>
-                        <div class="overflow-y-auto max-h-[400px]"><table class="w-full text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-400"><tr><th class="p-2 text-left">Act</th><th class="p-2 text-left">Who</th><th class="p-2 text-left">What</th></tr></thead><tbody id="adminHistoryTable"></tbody></table></div>
+                        <h4 class="font-bold mb-4 text-slate-700">All Transactions</h4>
+                        <div class="overflow-y-auto max-h-[400px]">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+                                    <tr><th class="p-2 text-left">Act</th><th class="p-2 text-left">Who</th><th class="p-2 text-left">What</th></tr>
+                                </thead>
+                                <tbody id="adminHistoryTable"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </main>
 
@@ -181,21 +228,29 @@
             <button onclick="closeLogin()" class="w-full py-3 mt-2 text-slate-400 text-sm">Cancel</button>
         </div>
     </div>
+
     <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl translate-y-20 opacity-0 transition-all z-50"><p id="toastMessage" class="font-bold text-sm">Notification</p></div>
 
     <script>
         let allBooks = [], activeStudents = [], adminPassword = "";
 
+        // UI & NAVIGATION
         function showPage(pageId, btn) {
             document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('bg-indigo-50', 'text-indigo-700'); el.classList.add('text-slate-600'); });
             if(btn) { btn.classList.remove('text-slate-600'); btn.classList.add('bg-indigo-50', 'text-indigo-700'); }
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
-            document.getElementById('pageTitle').innerText = pageId.charAt(0).toUpperCase() + pageId.slice(1);
+            
+            const titles = { 'catalog': 'Catalogue', 'borrow': 'Check Out', 'return': 'Check In', 'admin': 'Admin', 'myaccount': 'User History' };
+            if(titles[pageId]) document.getElementById('pageTitle').innerText = titles[pageId];
+
             if(pageId === 'borrow') setTimeout(() => document.getElementById('borrowBarcode').focus(), 100);
             if(pageId === 'return') setTimeout(() => document.getElementById('returnBarcode').focus(), 100);
+            
+            if(pageId === 'catalog') loadCatalog();
+            if(pageId === 'borrow') loadBorrowList();
+            if(pageId === 'return') loadReturnList();
             if(pageId === 'myaccount') resetUserAuthUI(); 
-            loadCatalog(); loadReturnList(); 
         }
 
         function showToast(msg, type='success') {
@@ -212,7 +267,7 @@
                 allBooks = await res.json();
                 renderTable(allBooks);
                 document.getElementById('statTotal').innerText = allBooks.length;
-            } catch(e) { console.error("Catalog Error:", e); }
+            } catch(e) { console.error(e); }
         }
 
         function renderTable(books) {
@@ -229,6 +284,7 @@
             renderTable(allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term)));
         }
 
+        // --- UPDATED BARCODE HANDLER (GOAL 1) ---
         function handleBarcode(event, type) {
             // 1. USB Scanners send 'Enter' at the end. We catch it here.
             if (event.key !== 'Enter') return;
@@ -277,16 +333,14 @@
                     
                     event.target.value = ''; 
                     showToast('Matched: ' + student.name);
-                    
-                    // Optional: You could auto-submit here if you trust the scanner 100%
-                    // submitTransaction('Return'); 
                 } else { 
                     showToast('This book is not currently checked out', 'error'); 
                     event.target.value = '';
                 }
             }
         }
-       // --- USER AUTH & HISTORY ---
+
+        // --- UPDATED USER AUTH & HISTORY (GOAL 2) ---
         
         // Reset the UI when clicking the "My History" tab
         function resetUserAuthUI() {
@@ -426,34 +480,66 @@
         }
 
         // --- UPDATED ADMIN INSPECT FUNCTION ---
-        // This was broken before because 'myHistoryEmail' didn't exist.
         function inspectUser(email) {
             showPage('myaccount');
-            
             // 1. Pre-fill the standard email box
             document.getElementById('authEmail').value = email;
-            
-            // 2. Bypass the "Check Status" button and immediately fetch history
-            // We use the adminPassword (global variable) to bypass the user's password check
+            // 2. Bypass the "Check Status" button and immediately fetch history using admin rights
             performLogin(email, adminPassword);
-            
             showToast("Inspecting " + email);
         }
+
+        // --- ADMIN ---
+        function checkAdmin() {
+            if (adminPassword) showPage('admin');
+            else document.getElementById('loginOverlay').classList.remove('hidden');
+        }
+        function closeLogin() { document.getElementById('loginOverlay').classList.add('hidden'); }
+        
+        async function attemptLogin() {
+            const pass = document.getElementById('adminPassInput').value;
+            const res = await fetch('api.php?action=admin_active', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: pass }) });
+            if(res.status === 403) document.getElementById('loginError').classList.remove('hidden');
+            else { adminPassword = pass; closeLogin(); loadAdminData(await res.json()); loadHistory(); showPage('admin'); }
+        }
+        function logoutAdmin() { adminPassword = ""; showPage('catalog'); }
+        
+        function loadAdminData(loans) {
+            const tbody = document.getElementById('adminActiveTable');
+            if (loans.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">No active loans.</td></tr>'; 
+            } else {
+                tbody.innerHTML = loans.map(l => {
+                    const rowClass = l.isOverdue ? 'bg-rose-50 text-rose-700 font-bold' : 'text-slate-600';
+                    const icon = l.isOverdue ? '<i class="ph-fill ph-warning text-rose-500"></i>' : '';
+                    let name = l.student, email = "-";
+                    const match = l.student.match(/(.*) <(.*)>/);
+                    if(match) { name = match[1]; email = match[2]; }
+
+                    return `<tr class="${rowClass} border-b border-slate-50 last:border-0"><td class="p-2"><button onclick="inspectUser('${email}')" class="text-indigo-600 hover:underline font-bold text-left">${name}</button></td><td class="p-2 text-xs text-slate-500">${email}</td><td class="p-2">${l.book}</td><td class="p-2 flex items-center gap-2">${l.daysHeld} days ${icon}</td></tr>`;
+                }).join('');
+            }
+        }
+
         async function loadHistory() {
             const res = await fetch('api.php?action=admin_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) });
             const history = await res.json();
             document.getElementById('adminHistoryTable').innerHTML = history.map(h => {
+                const badge = h.Action === 'Borrow' ? '<span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 text-xs font-bold uppercase">Out</span>' : '<span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-xs font-bold uppercase">In</span>';
                 let displayWho = h.Student;
                 const match = h.Student.match(/(.*) <(.*)>/);
                 if(match) displayWho = `<span class="font-bold">${match[1]}</span> <br> <span class="text-xs text-slate-400">${match[2]}</span>`;
-                return `<tr><td class="p-2 font-bold">${h.Action}</td><td class="p-2 text-xs text-slate-600">${displayWho}</td><td class="p-2 text-xs">${h.Book}<br>${h.Date}</td></tr>`;
+                return `<tr><td class="p-2">${badge}</td><td class="p-2 text-slate-600 leading-tight">${displayWho}</td><td class="p-2 text-slate-500 text-xs">${h.Book} <br> <span class="text-slate-400">${h.Date}</span></td></tr>`;
             }).join('');
         }
         
-        async function reloadCatalog() { await fetch('api.php?action=admin_reload', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) }); showToast("Reloaded"); }
+        async function reloadCatalog() {
+             const res = await fetch('api.php?action=admin_reload', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) });
+             if(res.ok) showToast("Reloaded");
+        }
 
-        // TRANS
         async function loadBorrowList() {
+            await loadCatalog(); 
             const avail = allBooks.filter(b => b.available > 0);
             document.getElementById('borrowBookSelect').innerHTML = '<option value="">Select...</option>' + avail.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
         }
@@ -461,7 +547,9 @@
             const res = await fetch('api.php?action=students');
             activeStudents = await res.json();
             document.getElementById('returnStudentSelect').innerHTML = '<option value="">Select...</option>' + activeStudents.map(s => {
-                let name = s.name.match(/(.*) <(.*)>/) ? s.name.match(/(.*) <(.*)>/)[1] : s.name;
+                let name = s.name;
+                const match = s.name.match(/(.*) <(.*)>/);
+                if(match) name = match[1];
                 return `<option value="${s.name}">${name}</option>`;
             }).join('');
         }
@@ -483,8 +571,11 @@
                 if(!student || !book) return showToast('Fill all fields', 'error');
             }
             const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student, book, action }) });
-            if(res.ok) { showToast(action + ' Success'); if(action === 'Borrow') { document.getElementById('borrowName').value = ''; document.getElementById('borrowEmail').value = ''; loadBorrowList(); } else loadReturnList(); } 
-            else showToast('Error', 'error');
+            if(res.ok) {
+                showToast(action + ' Success');
+                if(action === 'Borrow') { document.getElementById('borrowName').value = ''; document.getElementById('borrowEmail').value = ''; loadBorrowList(); }
+                else loadReturnList();
+            } else showToast('Error', 'error');
         }
 
         loadCatalog();
