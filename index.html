@@ -340,7 +340,7 @@
             }
         }
 
-        // --- UPDATED USER AUTH & HISTORY (GOAL 2) ---
+       // --- UPDATED USER AUTH & HISTORY (FIXED) ---
         
         // Reset the UI when clicking the "My History" tab
         function resetUserAuthUI() {
@@ -363,10 +363,10 @@
             const email = document.getElementById('authEmail').value.trim();
             if(!email) return showToast("Please enter your email", 'error');
 
-            // Visual feedback that it's loading
             const nextBtn = document.querySelector('#authStep1 button');
             const originalText = nextBtn.innerText;
             nextBtn.innerText = "Checking...";
+            nextBtn.disabled = true;
 
             try {
                 const res = await fetch('api.php?action=check_user_status', { 
@@ -378,38 +378,58 @@
 
                 // UI Transitions
                 document.getElementById('authStep2').classList.remove('hidden');
-                document.getElementById('authEmail').disabled = true; // Lock email
-                document.getElementById('authPassword').focus(); // Auto-focus password
+                document.getElementById('authEmail').disabled = true; 
+                
+                const passInput = document.getElementById('authPassword');
+                passInput.focus();
                 
                 const btn = document.getElementById('authBtnAction');
                 const msg = document.getElementById('authMessage');
 
-                // Clear previous listeners to prevent double-firing
+                // Clear previous listeners on Button to prevent double-firing
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
+
+                // Clear previous listeners on Password Input (for Enter key)
+                const newPassInput = passInput.cloneNode(true);
+                passInput.parentNode.replaceChild(newPassInput, passInput);
 
                 if(data.status === 'exists') {
                     msg.innerHTML = "Welcome back! Enter password:";
                     newBtn.innerText = "Login & View History";
                     newBtn.className = "px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700";
-                    newBtn.onclick = () => performLogin(email);
+                    
+                    const loginAction = () => performLogin(email);
+                    newBtn.onclick = loginAction;
+                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') loginAction(); };
+
                 } else {
                     msg.innerHTML = "<span class='text-emerald-600 font-bold'>New Member!</span> Create a password:";
                     newBtn.innerText = "Create Account";
                     newBtn.className = "px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700";
-                    newBtn.onclick = () => performRegistration(email);
+                    
+                    const regAction = () => performRegistration(email);
+                    newBtn.onclick = regAction;
+                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
                 }
             } catch (e) {
                 showToast("Connection Error", "error");
             } finally {
                 nextBtn.innerText = originalText;
+                nextBtn.disabled = false;
             }
         }
 
         // Step 2a: Register New User
         async function performRegistration(email) {
+            // Get value from the new cloned input
             const password = document.getElementById('authPassword').value;
             if(!password) return showToast("Password cannot be empty", 'error');
+
+            const btn = document.getElementById('authBtnAction');
+            const originalText = btn.innerText;
+            btn.innerText = "Creating...";
+            btn.disabled = true;
 
             try {
                 const res = await fetch('api.php?action=register_user', {
@@ -420,19 +440,29 @@
                 
                 if(res.ok) {
                     showToast("Account Created! Logging in...");
-                    // Immediately log them in after success
-                    performLogin(email);
+                    // FIX: Pass password explicitly so it doesn't get lost
+                    await performLogin(email, password); 
                 } else {
-                    showToast("Registration Failed", 'error');
+                    const data = await res.json();
+                    showToast(data.error || "Registration Failed", 'error');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+                showToast("Connection Error", 'error');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         // Step 2b: Login & Fetch History
-        // NOTE: accept optional 'overridePassword' for Admin Mode
         async function performLogin(email, overridePassword = null) {
             const password = overridePassword || document.getElementById('authPassword').value;
             if(!password) return showToast("Enter Password", 'error');
+
+            const btn = document.getElementById('authBtnAction');
+            if(btn) btn.innerText = "Logging in...";
 
             try {
                 const res = await fetch('api.php?action=user_history', { 
@@ -445,11 +475,17 @@
                     showToast("Incorrect Password", 'error');
                     document.getElementById('authPassword').value = '';
                     document.getElementById('authPassword').focus();
+                    if(btn) btn.innerText = "Login & View History";
+                    if(btn) btn.disabled = false;
                 } else {
                     const data = await res.json();
                     renderHistory(data);
                 }
-            } catch(e) { showToast("System Error", 'error'); }
+            } catch(e) { 
+                showToast("System Error", 'error'); 
+                if(btn) btn.innerText = "Retry";
+                if(btn) btn.disabled = false;
+            }
         }
 
         function renderHistory(data) {
@@ -482,13 +518,10 @@
         // --- UPDATED ADMIN INSPECT FUNCTION ---
         function inspectUser(email) {
             showPage('myaccount');
-            // 1. Pre-fill the standard email box
             document.getElementById('authEmail').value = email;
-            // 2. Bypass the "Check Status" button and immediately fetch history using admin rights
             performLogin(email, adminPassword);
             showToast("Inspecting " + email);
         }
-
         // --- ADMIN ---
         function checkAdmin() {
             if (adminPassword) showPage('admin');
