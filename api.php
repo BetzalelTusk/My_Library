@@ -5,10 +5,10 @@ $trans_csv = 'transactions.csv';
 $users_file = 'users.json'; 
 $collateral_file = 'collateral.json'; 
 $admin_password = "1234"; 
-$n8n_webhook = ""; 
+$n8n_webhook = "https://n8n.srv1091500.hstgr.cloud/webhook-test/library-transaction"; // <--- PASTE YOUR N8N WEBHOOK URL HERe
 
 // SECURITY: Change this to a random 32-character string!
-$encryption_key = "CHANGE_THIS_TO_RANDOM_CHARACTERS"; 
+$encryption_key = "eNQ>4'Ns&n`qxj9N!'BQRL>KZ^HK[)]h"; 
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
@@ -98,7 +98,7 @@ try {
         exit;
     }
 
-    // 2. GET ACTIVE USERS (For Check In Dropdown)
+    // 2. GET ACTIVE USERS
     if ($action === 'students' && $method === 'GET') {
         $transactions = read_transactions_safe($trans_csv);
         $studentLoans = [];
@@ -126,7 +126,6 @@ try {
         $users = json_decode(file_get_contents($users_file), true) ?? [];
         
         if (isset($users[$email])) {
-            // Handle both old format (string hash) and new format (array with name)
             $userData = $users[$email];
             $name = is_array($userData) ? ($userData['name'] ?? 'Unknown') : 'Unknown';
             echo json_encode(['status' => 'exists', 'name' => $name]); 
@@ -136,7 +135,7 @@ try {
         exit;
     }
 
-    // 4. REGISTER USER (Updated for Full Name)
+    // 4. REGISTER USER
     if ($action === 'register_user' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $email = strtolower(trim($input['email'] ?? ''));
@@ -146,8 +145,6 @@ try {
         if(!$email || !$pass || !$name) { http_response_code(400); echo json_encode(['error'=>'Missing fields']); exit; }
 
         $users = json_decode(file_get_contents($users_file), true) ?? [];
-        
-        // Store as array with hash and name
         $users[$email] = [
             'hash' => password_hash($pass, PASSWORD_DEFAULT),
             'name' => $name
@@ -170,8 +167,7 @@ try {
             $users = json_decode(file_get_contents($users_file), true) ?? [];
             if (isset($users[$email])) {
                 $userData = $users[$email];
-                $hash = is_array($userData) ? $userData['hash'] : $userData; // Backward compat
-                
+                $hash = is_array($userData) ? $userData['hash'] : $userData; 
                 if (!password_verify($password, $hash)) {
                     http_response_code(403);
                     echo json_encode(['error' => 'Incorrect Password']);
@@ -204,7 +200,7 @@ try {
         exit;
     }
 
-    // 6. TRANSACTION (Updated to Enforce Uniform Names)
+    // 6. TRANSACTION (UPDATED FOR N8N & DUE DATES)
     if ($action === 'transaction' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         $studentInput = str_replace('"', '""', $input['student'] ?? 'Unknown');
@@ -212,40 +208,51 @@ try {
         $act = $input['action'] ?? 'Error';
         $date = date("Y-m-d H:i:s");
         
-        // Logic: Input might be just email. Look up real name.
+        // Resolve Real Name & Clean Email
         $email = strtolower(trim($studentInput));
         $users = json_decode(file_get_contents($users_file), true) ?? [];
-        
-        // Check if studentInput is just an email and exists in DB
+        $realName = 'Student';
+
         if(filter_var($email, FILTER_VALIDATE_EMAIL) && isset($users[$email])) {
              $userData = $users[$email];
              $realName = is_array($userData) ? ($userData['name'] ?? 'Unknown') : 'Student';
-             $student = "$realName <$email>"; // Force Uniform Format
+             $student = "$realName <$email>"; 
         } else {
-             // Fallback for legacy or manual inputs (Check In)
              $student = $studentInput;
         }
 
         $line = "\"$student\",\"$book\",\"$act\",\"$date\"\n";
         file_put_contents($trans_csv, $line, FILE_APPEND);
 
+        // --- N8N WEBHOOK TRIGGER ---
         if (!empty($n8n_webhook)) {
-            $payload = json_encode(['student'=>$student, 'book'=>$book, 'action'=>$act, 'timestamp'=>$date]);
+            $dueDate = date('Y-m-d', strtotime($date . ' + 14 days')); // Calculate Due Date
+            
+            $payload = json_encode([
+                'student_name' => $realName,
+                'student_email' => $email,
+                'book_title' => $book,
+                'action' => $act, // "Borrow" or "Return"
+                'transaction_date' => $date,
+                'due_date' => $dueDate
+            ]);
+
             $ch = curl_init($n8n_webhook);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 1); // Fast timeout so UI doesn't lag
             curl_exec($ch);
             curl_close($ch);
         }
+        // ---------------------------
 
         echo json_encode(['success' => true]);
         exit;
     }
 
-    // 7. ADMIN ACTIVE (Updated for Collateral & Countdown)
+    // 7. ADMIN ACTIVE
     if ($action === 'admin_active' && $method === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         if (($input['password'] ?? '') !== $admin_password) { http_response_code(403); exit; }
@@ -268,7 +275,6 @@ try {
             $studentStr = $parts[0] ?? 'Unknown';
             $book = $parts[1] ?? 'Unknown';
             
-            // Parse Email for Collateral Check
             $email = '';
             if (preg_match('/<(.*)>/', $studentStr, $matches)) {
                 $email = strtolower($matches[1]);
@@ -276,12 +282,8 @@ try {
 
             try { $borrowDate = new DateTime($dateStr); } catch (Exception $e) { $borrowDate = $now; }
             $diff = $now->diff($borrowDate)->days;
-            
-            // Logic: 14 Day Loan Period
             $daysLeft = 14 - $diff;
             $isOverdue = $daysLeft < 0;
-            
-            // Check Collateral
             $hasCollateral = !empty($email) && isset($collateralDB[$email]);
 
             $result[] = [
