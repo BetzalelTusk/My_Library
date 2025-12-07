@@ -356,12 +356,12 @@
             }
         }
 
-        // --- USER AUTH & REGISTRATION ---
+// --- USER AUTH & REGISTRATION (FIXED) ---
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
             document.getElementById('authStep2').classList.add('hidden');
             document.getElementById('authStep1').classList.remove('hidden');
-            document.getElementById('authNameField').classList.add('hidden'); // Hide name by default
+            document.getElementById('authNameField').classList.add('hidden'); 
             
             const emailInput = document.getElementById('authEmail');
             emailInput.disabled = false;
@@ -369,6 +369,12 @@
             document.getElementById('authPassword').value = '';
             document.getElementById('authNameInput').value = '';
             document.getElementById('authMessage').className = 'text-sm font-medium text-slate-600';
+            
+            // Clear any lingering event listeners on the password box
+            const oldPass = document.getElementById('authPassword');
+            const newPass = oldPass.cloneNode(true);
+            oldPass.parentNode.replaceChild(newPass, oldPass);
+
             setTimeout(() => emailInput.focus(), 100);
         }
 
@@ -394,28 +400,43 @@
                 
                 const btn = document.getElementById('authBtnAction');
                 const msg = document.getElementById('authMessage');
+                const passInput = document.getElementById('authPassword');
 
+                // Clear previous button listeners
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
+
+                // Clear previous password listeners to handle Enter key correctly
+                const newPassInput = passInput.cloneNode(true);
+                passInput.parentNode.replaceChild(newPassInput, passInput);
 
                 if(data.status === 'exists') {
                     // LOGIN FLOW
                     msg.innerHTML = "Welcome back! Enter password:";
-                    document.getElementById('authPassword').focus();
+                    newPassInput.focus();
                     newBtn.innerText = "Login & View History";
                     newBtn.className = "px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700";
-                    newBtn.onclick = () => performLogin(email);
+                    
+                    const loginAction = () => performLogin(email);
+                    newBtn.onclick = loginAction;
+                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') loginAction(); };
 
                 } else {
                     // REGISTRATION FLOW
                     msg.innerHTML = "<span class='text-emerald-600 font-bold'>New Member!</span> Complete registration:";
-                    document.getElementById('authNameField').classList.remove('hidden'); // SHOW NAME FIELD
+                    document.getElementById('authNameField').classList.remove('hidden'); 
                     document.getElementById('authNameInput').focus();
                     newBtn.innerText = "Create Account";
                     newBtn.className = "px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700";
-                    newBtn.onclick = () => performRegistration(email);
+                    
+                    const regAction = () => performRegistration(email);
+                    newBtn.onclick = regAction;
+                    // Add Enter key support for both fields
+                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
+                    document.getElementById('authNameInput').onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
                 }
             } catch (e) {
+                console.error(e);
                 showToast("Connection Error", "error");
             } finally {
                 nextBtn.innerText = originalText;
@@ -462,7 +483,10 @@
             if(!password) return showToast("Enter Password", 'error');
 
             const btn = document.getElementById('authBtnAction');
-            if(btn) btn.innerText = "Logging in...";
+            if(btn) {
+                btn.innerText = "Logging in...";
+                btn.disabled = true;
+            }
 
             try {
                 const res = await fetch('api.php?action=user_history', { 
@@ -475,16 +499,21 @@
                     showToast("Incorrect Password", 'error');
                     document.getElementById('authPassword').value = '';
                     document.getElementById('authPassword').focus();
-                    if(btn) btn.innerText = "Login & View History";
-                    if(btn) btn.disabled = false;
+                    if(btn) {
+                        btn.innerText = "Login & View History";
+                        btn.disabled = false;
+                    }
                 } else {
                     const data = await res.json();
                     renderHistory(data);
                 }
             } catch(e) { 
+                console.error(e);
                 showToast("System Error", 'error'); 
-                if(btn) btn.innerText = "Retry";
-                if(btn) btn.disabled = false;
+                if(btn) {
+                    btn.innerText = "Retry";
+                    btn.disabled = false;
+                }
             }
         }
 
