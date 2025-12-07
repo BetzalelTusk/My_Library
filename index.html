@@ -356,7 +356,7 @@
             }
         }
 
-// --- USER AUTH & REGISTRATION (FIXED) ---
+        // --- USER AUTH & REGISTRATION ---
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
             document.getElementById('authStep2').classList.add('hidden');
@@ -712,7 +712,7 @@
                 const email = document.getElementById('borrowEmail').value;
                 book = document.getElementById('borrowBookSelect').value;
                 if(!email || !book) return showToast('Fill all fields', 'error');
-                student = email; // Send email, backend resolves name
+                student = email; 
             } else {
                 student = document.getElementById('returnStudentSelect').value;
                 book = document.getElementById('returnBookSelect').value;
@@ -720,7 +720,10 @@
             }
             const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student, book, action }) });
             if(res.ok) {
-                showToast(action + ' Success');
+                // GOAL 5: Let user know email was sent
+                const emailMsg = action === 'Borrow' ? `Confirmation sent to ${student}` : 'Book returned';
+                showToast(emailMsg);
+                
                 if(action === 'Borrow') { document.getElementById('borrowEmail').value = ''; document.getElementById('borrowIdentityMsg').classList.add('hidden'); loadBorrowList(); }
                 else loadReturnList();
             } else showToast('Error', 'error');
