@@ -9,216 +9,334 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        library: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+                    }
+                } 
+            }
         }
     </script>
     <style>
-        body { background-color: #f1f5f9; }
-        .fade-enter { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-overlay { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        body { background-color: #f8fafc; }
+        .fade-enter { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f8fafc; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .input-focus { @apply focus:ring-4 focus:ring-library-100 focus:border-library-500 transition-all duration-200; }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex overflow-hidden font-sans">
+<body class="text-slate-800 h-screen flex overflow-hidden font-sans antialiased selection:bg-library-100 selection:text-library-900">
 
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex z-20">
+    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex z-20 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
         <div>
-            <div class="h-20 flex items-center px-8 border-b border-slate-100">
-                <div class="flex items-center gap-2 text-indigo-600">
-                    <i class="ph-fill ph-books text-2xl"></i>
+            <div class="h-24 flex items-center px-8 border-b border-slate-50">
+                <div class="flex items-center gap-3 text-library-600">
+                    <div class="bg-library-50 p-2 rounded-xl">
+                        <i class="ph-fill ph-books text-2xl"></i>
+                    </div>
                     <span class="font-bold text-xl tracking-tight text-slate-900">LibraryOS</span>
                 </div>
             </div>
 
-            <nav class="p-4 space-y-1">
-                <button onclick="showPage('catalog', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl bg-indigo-50 text-indigo-700 transition-all">
-                    <i class="ph ph-book-open text-lg"></i> Catalogue
+            <nav class="p-6 space-y-2">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Main Menu</div>
+                
+                <button onclick="showPage('catalog', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl bg-library-50 text-library-700 transition-all duration-200 group">
+                    <i class="ph ph-book-open text-xl group-hover:scale-110 transition-transform"></i> Catalogue
                 </button>
-                <button onclick="showPage('borrow', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
-                    <i class="ph ph-upload-simple text-lg"></i> Check Out
+                <button onclick="showPage('borrow', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+                    <i class="ph ph-upload-simple text-xl group-hover:scale-110 transition-transform"></i> Check Out
                 </button>
-                <button onclick="showPage('return', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all">
-                    <i class="ph ph-download-simple text-lg"></i> Check In
+                <button onclick="showPage('return', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
+                    <i class="ph ph-download-simple text-xl group-hover:scale-110 transition-transform"></i> Check In
                 </button>
                 
-                <div class="pt-4 mt-2 border-t border-slate-50">
-                    <button onclick="showPage('myaccount', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all">
-                        <i class="ph ph-user-circle text-lg"></i> My History
+                <div class="pt-6 mt-4 border-t border-slate-50">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Personal</div>
+                    <button onclick="showPage('myaccount', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 group">
+                        <i class="ph ph-user-circle text-xl group-hover:scale-110 transition-transform"></i> My History
                     </button>
                 </div>
             </nav>
         </div>
 
-        <div class="p-4 border-t border-slate-100">
-            <button onclick="checkAdmin()" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-all">
-                <i class="ph ph-lock-key text-lg"></i> Admin Panel
+        <div class="p-6 border-t border-slate-50">
+            <button onclick="checkAdmin()" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group">
+                <i class="ph ph-lock-key text-xl group-hover:scale-110 transition-transform"></i> Admin Panel
             </button>
         </div>
     </aside>
 
-    <div class="md:hidden fixed top-0 w-full bg-white border-b z-30 px-4 h-16 flex items-center justify-between">
-        <span class="font-bold text-lg text-indigo-600">LibraryOS</span>
-        <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');" class="p-2 rounded-md bg-slate-100">
+    <div class="md:hidden fixed top-0 w-full bg-white/90 backdrop-blur-md border-b z-30 px-4 h-16 flex items-center justify-between">
+        <span class="font-bold text-lg text-library-600 flex items-center gap-2"><i class="ph-fill ph-books"></i> LibraryOS</span>
+        <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');" class="p-2 rounded-lg bg-slate-100 text-slate-600">
             <i class="ph ph-list text-xl"></i>
         </button>
     </div>
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-16 md:pt-0">
-        <header class="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-16 md:pt-0 bg-[#f8fafc]">
+        
+        <header class="h-24 flex items-center justify-between px-8 md:px-12 shrink-0">
             <div>
-                <h2 id="pageTitle" class="text-xl font-bold text-slate-800">Catalogue</h2>
-                <p id="pageSubtitle" class="text-xs text-slate-500 font-medium">Manage library inventory</p>
+                <h2 id="pageTitle" class="text-2xl font-bold text-slate-800 tracking-tight">Catalogue</h2>
+                <p id="pageSubtitle" class="text-sm text-slate-500 font-medium mt-1">Manage library inventory</p>
             </div>
-            <div class="flex gap-6 hidden sm:flex">
-                <div class="text-right">
-                    <p class="text-xs text-slate-400 uppercase font-semibold">Total Books</p>
-                    <p id="statTotal" class="font-bold text-slate-700">...</p>
-                </div>
+            <div class="hidden sm:flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <p class="text-xs font-bold text-slate-600 uppercase tracking-wide">System Online</p>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="flex-1 overflow-y-auto px-4 md:px-12 pb-12">
             
-            <div id="catalog" class="page-section fade-enter max-w-6xl mx-auto">
-                <div class="relative group mb-6">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <i class="ph ph-magnifying-glass text-slate-400 text-xl"></i>
+            <div id="catalog" class="page-section fade-enter max-w-7xl mx-auto">
+                <div class="relative group mb-8 shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                        <i class="ph ph-magnifying-glass text-slate-400 text-xl group-focus-within:text-library-500 transition-colors"></i>
                     </div>
-                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full pl-12 pr-4 py-4 bg-white border-0 rounded-2xl shadow-sm ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500" placeholder="Search by title or barcode...">
+                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full pl-14 pr-4 py-5 bg-white border border-slate-200 rounded-2xl text-lg shadow-sm input-focus placeholder-slate-400" placeholder="Search by title, author, or scan barcode...">
+                    <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
+                        <span class="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-md border border-slate-200">CTRL + K</span>
+                    </div>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+                <div class="bg-white rounded-3xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50/50 text-xs uppercase text-slate-500"><tr><th class="p-4">ID</th><th class="p-4">Title</th><th class="p-4">Category</th><th class="p-4 text-right">Status</th></tr></thead>
-                        <tbody id="bookTable" class="divide-y divide-slate-100 text-sm"></tbody>
+                        <thead class="bg-slate-50 text-xs font-bold uppercase text-slate-500 tracking-wider">
+                            <tr>
+                                <th class="p-5 border-b border-slate-100 w-32">ID</th>
+                                <th class="p-5 border-b border-slate-100">Title & Details</th>
+                                <th class="p-5 border-b border-slate-100">Category</th>
+                                <th class="p-5 border-b border-slate-100 text-right">Availability</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookTable" class="divide-y divide-slate-50 text-sm"></tbody>
                     </table>
-                </div>
-            </div>
-
-            <div id="borrow" class="page-section hidden fade-enter h-full flex items-center justify-center">
-                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full max-w-lg">
-                    <h2 class="text-2xl font-bold text-center mb-6">Check Out Book</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Barcode Scan</label>
-                            <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono tracking-widest text-lg focus:ring-2 focus:ring-indigo-500" placeholder="Scan...">
+                    <div id="emptyCatalogState" class="hidden p-12 text-center">
+                        <div class="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <i class="ph ph-books text-3xl"></i>
                         </div>
-                        <hr class="border-slate-100">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Student Email</label>
-                            <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500" placeholder="e.g. john@email.com">
-                            <p id="borrowIdentityMsg" class="text-xs mt-2 font-bold text-indigo-600 hidden">Welcome, <span id="borrowIdentityName"></span></p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label>
-                            <select id="borrowBookSelect" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"></select>
-                        </div>
-                        <button onclick="submitTransaction('Borrow')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">Confirm Check Out</button>
+                        <h3 class="text-slate-900 font-bold text-lg">No books found</h3>
+                        <p class="text-slate-500">Try adjusting your search terms.</p>
                     </div>
                 </div>
             </div>
 
-            <div id="return" class="page-section hidden fade-enter h-full flex items-center justify-center">
-                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full max-w-lg">
-                    <h2 class="text-2xl font-bold text-center mb-6">Check In Book</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Barcode Scan</label>
-                            <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono tracking-widest text-lg focus:ring-2 focus:ring-emerald-500" placeholder="Scan...">
-                        </div>
-                        <hr class="border-slate-100">
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Student</label>
-                            <select id="returnStudentSelect" onchange="updateReturnBooks()" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"></select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold uppercase text-slate-400 ml-1">Book</label>
-                            <select id="returnBookSelect" class="block w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500"></select>
-                        </div>
-                        <button onclick="submitTransaction('Return')" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95">Confirm Check In</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="myaccount" class="page-section hidden fade-enter max-w-4xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6">
-                    <h3 class="text-lg font-bold mb-4">User Portal</h3>
-                    
-                    <div id="authStep1" class="flex gap-4">
-                        <input type="email" id="authEmail" class="flex-1 p-3 border border-slate-200 rounded-xl" placeholder="Enter your email address...">
-                        <button onclick="checkUserStatus()" class="px-6 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-black">Next</button>
-                    </div>
-
-                    <div id="authStep2" class="hidden mt-4">
-                        <div class="flex flex-col gap-2">
-                            <p id="authMessage" class="text-sm font-medium text-slate-600">Please enter your password:</p>
-                            
-                            <div id="authNameField" class="hidden mb-2">
-                                <label class="text-xs font-bold uppercase text-slate-400 ml-1">Full Name</label>
-                                <input type="text" id="authNameInput" class="block w-full p-3 border border-slate-200 rounded-xl" placeholder="e.g. John Doe">
-                            </div>
-
-                            <div class="flex gap-4">
-                                <input type="password" id="authPassword" class="flex-1 p-3 border border-slate-200 rounded-xl" placeholder="••••••••">
-                                <button id="authBtnAction" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700">View History</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="myHistoryResults" class="hidden space-y-6">
-                    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
-                        <h4 class="font-bold text-indigo-900 mb-3 flex items-center gap-2"><i class="ph-fill ph-book-bookmark"></i> Currently Borrowed</h4>
-                        <ul id="myActiveList" class="space-y-2 text-sm text-indigo-800"></ul>
+            <div id="borrow" class="page-section hidden fade-enter h-full flex flex-col items-center justify-center -mt-10">
+                <div class="w-full max-w-lg">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-library-500 to-indigo-400"></div>
                         
-                        <div class="mt-4 pt-4 border-t border-indigo-200">
-                            <button onclick="openCollateralModal()" class="w-full py-2 bg-white border border-indigo-200 text-indigo-700 font-bold rounded-lg text-sm hover:bg-indigo-50">
-                                <i class="ph ph-credit-card"></i> Update Collateral Card
+                        <div class="text-center mb-8">
+                            <div class="w-16 h-16 bg-library-50 text-library-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i class="ph-fill ph-upload-simple text-3xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800">Check Out</h2>
+                            <p class="text-slate-500 text-sm">Scan items to assign them to a patron</p>
+                        </div>
+
+                        <div class="space-y-5">
+                            <div class="relative">
+                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">Step 1: Scan</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="ph-bold ph-scan text-library-500 text-lg"></i>
+                                    </div>
+                                    <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-lg focus:bg-white focus:border-library-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Barcode...">
+                                </div>
+                            </div>
+
+                            <div class="relative p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-2 block">Step 2: Confirm Details</label>
+                                
+                                <div class="space-y-3">
+                                    <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full p-3 bg-white border border-slate-200 rounded-xl text-sm input-focus" placeholder="Student Email or ID">
+                                    <p id="borrowIdentityMsg" class="text-xs font-bold text-center h-4"></p>
+                                    
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph-fill ph-book text-slate-400"></i></div>
+                                        <select id="borrowBookSelect" class="block w-full pl-10 p-3 bg-white border border-slate-200 rounded-xl text-sm input-focus appearance-none"></select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="submitTransaction('Borrow')" class="w-full py-4 bg-library-600 hover:bg-library-700 text-white font-bold rounded-2xl shadow-lg shadow-library-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                                <span>Confirm Check Out</span>
+                                <i class="ph-bold ph-arrow-right"></i>
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                        <h4 class="font-bold text-slate-800 mb-4">Full History</h4>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs text-slate-400 uppercase bg-slate-50"><tr><th class="p-3">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead>
-                                <tbody id="myHistoryTable" class="divide-y divide-slate-100"></tbody>
-                            </table>
+                </div>
+            </div>
+
+            <div id="return" class="page-section hidden fade-enter h-full flex flex-col items-center justify-center -mt-10">
+                <div class="w-full max-w-lg">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+                        
+                        <div class="text-center mb-8">
+                            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i class="ph-fill ph-download-simple text-3xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800">Check In</h2>
+                            <p class="text-slate-500 text-sm">Return items to the inventory</p>
+                        </div>
+
+                        <div class="space-y-5">
+                            <div class="relative">
+                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">Quick Scan</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="ph-bold ph-scan text-emerald-500 text-lg"></i>
+                                    </div>
+                                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-lg focus:bg-white focus:border-emerald-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Barcode...">
+                                </div>
+                            </div>
+
+                            <div class="relative p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-2 block">Manual Selection</label>
+                                <div class="space-y-3">
+                                    <select id="returnStudentSelect" onchange="updateReturnBooks()" class="block w-full p-3 bg-white border border-slate-200 rounded-xl text-sm input-focus"></select>
+                                    <select id="returnBookSelect" class="block w-full p-3 bg-white border border-slate-200 rounded-xl text-sm input-focus"></select>
+                                </div>
+                            </div>
+
+                            <button onclick="submitTransaction('Return')" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                                <span>Confirm Return</span>
+                                <i class="ph-bold ph-check"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="admin" class="page-section hidden fade-enter max-w-7xl mx-auto">
-                <div class="flex justify-between items-end mb-6">
-                    <h3 class="text-lg font-bold text-slate-700">Admin Dashboard</h3>
-                    <div class="flex gap-2">
-                        <button onclick="reloadCatalog()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium">Refresh</button>
-                        <button onclick="logoutAdmin()" class="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg text-sm font-medium">Logout</button>
+            <div id="myaccount" class="page-section hidden fade-enter max-w-3xl mx-auto pt-4">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 bg-slate-50/50">
+                        <h3 class="text-xl font-bold text-slate-900">Member Portal</h3>
+                        <p class="text-slate-500 text-sm">View your history and manage account settings</p>
+                    </div>
+
+                    <div class="p-8">
+                        <div id="authStep1" class="flex gap-3">
+                            <input type="email" id="authEmail" class="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl input-focus" placeholder="Enter your email address...">
+                            <button onclick="checkUserStatus()" class="px-8 py-4 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200">Next</button>
+                        </div>
+
+                        <div id="authStep2" class="hidden mt-6 space-y-4 animate-slideUpFade">
+                            <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
+                                <p id="authMessage" class="text-sm font-medium text-slate-600 mb-4">Verify Identity</p>
+                                
+                                <div id="authNameField" class="hidden mb-3">
+                                    <input type="text" id="authNameInput" class="block w-full p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Full Name">
+                                </div>
+                                <div id="authIdField" class="hidden mb-3">
+                                    <input type="text" id="authIdInput" class="block w-full p-3.5 border border-slate-200 rounded-xl font-mono text-sm" placeholder="Scan ID Card (Optional)">
+                                </div>
+
+                                <div class="flex gap-3">
+                                    <input type="password" id="authPassword" class="flex-1 p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Password">
+                                    <button id="authBtnAction" class="px-6 py-3.5 bg-library-600 text-white font-bold rounded-xl hover:bg-library-700 shadow-md">Login</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="myHistoryResults" class="hidden">
+                        <div class="bg-indigo-900 text-white p-6 mx-6 rounded-2xl shadow-inner mb-6 relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10"><i class="ph-fill ph-books text-9xl"></i></div>
+                            <h4 class="font-bold text-indigo-100 uppercase tracking-widest text-xs mb-2">Active Loans</h4>
+                            <ul id="myActiveList" class="space-y-2 relative z-10 text-lg font-medium"></ul>
+                            
+                            <div class="mt-6 pt-4 border-t border-indigo-800 flex gap-3 relative z-10">
+                                <button onclick="openCollateralModal()" class="px-4 py-2 bg-indigo-800/50 hover:bg-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wide border border-indigo-700 transition-colors flex items-center gap-2">
+                                    <i class="ph-fill ph-credit-card"></i> Collateral
+                                </button>
+                                <button onclick="openLinkIDModal()" class="px-4 py-2 bg-indigo-800/50 hover:bg-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wide border border-indigo-700 transition-colors flex items-center gap-2">
+                                    <i class="ph-fill ph-identification-card"></i> Link ID
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="px-8 pb-8">
+                            <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-bold ph-clock-counter-clockwise"></i> History Log</h4>
+                            <div class="overflow-hidden rounded-xl border border-slate-100">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-slate-50 text-xs text-slate-400 uppercase font-bold"><tr><th class="p-3 pl-4">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead>
+                                    <tbody id="myHistoryTable" class="divide-y divide-slate-50 bg-white"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                        <h4 class="font-bold mb-4 text-orange-600">Active Loans</h4>
-                        <div class="overflow-x-auto">
+            </div>
+
+            <div id="admin" class="page-section hidden fade-enter max-w-[90rem] mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">Admin Dashboard</h3>
+                        <p class="text-slate-500">System Overview & Alerts</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="reloadCatalog()" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Refresh Data</button>
+                        <button onclick="logoutAdmin()" class="px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-sm font-bold hover:bg-rose-100 transition-colors">Logout</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i class="ph-fill ph-users text-2xl"></i></div>
+                        <div><p class="text-xs font-bold text-slate-400 uppercase">Active Students</p><p class="text-xl font-bold text-slate-800" id="statUsers">-</p></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="p-3 bg-orange-50 text-orange-600 rounded-xl"><i class="ph-fill ph-book-open text-2xl"></i></div>
+                        <div><p class="text-xs font-bold text-slate-400 uppercase">Books Out</p><p class="text-xl font-bold text-slate-800" id="statLoans">-</p></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="p-3 bg-rose-50 text-rose-600 rounded-xl"><i class="ph-fill ph-warning-circle text-2xl"></i></div>
+                        <div><p class="text-xs font-bold text-slate-400 uppercase">Overdue</p><p class="text-xl font-bold text-slate-800" id="statOverdue">-</p></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div class="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                        <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h4 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-hourglass-medium text-orange-500"></i> Active Loans</h4>
+                        </div>
+                        <div class="overflow-x-auto flex-1">
                             <table class="w-full text-sm">
-                                <thead class="bg-slate-50 text-xs uppercase text-slate-400">
-                                    <tr><th class="p-2 text-left">Name</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Book</th><th class="p-2 text-left">Due In</th></tr>
+                                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold">
+                                    <tr>
+                                        <th class="p-4 text-left">Student</th>
+                                        <th class="p-4 text-left">Collateral</th>
+                                        <th class="p-4 text-left">Book</th>
+                                        <th class="p-4 text-left">Due Status</th>
+                                    </tr>
                                 </thead>
-                                <tbody id="adminActiveTable"></tbody>
+                                <tbody id="adminActiveTable" class="divide-y divide-slate-50"></tbody>
                             </table>
                         </div>
                     </div>
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                        <h4 class="font-bold mb-4 text-slate-700">All Transactions</h4>
-                        <div class="overflow-y-auto max-h-[400px]">
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
+                        <div class="p-6 border-b border-slate-100">
+                            <h4 class="font-bold text-slate-800">Transaction Log</h4>
+                        </div>
+                        <div class="overflow-y-auto flex-1 p-0">
                             <table class="w-full text-sm">
-                                <thead class="bg-slate-50 text-xs uppercase text-slate-400">
-                                    <tr><th class="p-2 text-left">Act</th><th class="p-2 text-left">Who</th><th class="p-2 text-left">What</th></tr>
+                                <thead class="bg-slate-50 text-xs uppercase text-slate-400 sticky top-0 z-10 font-bold">
+                                    <tr><th class="p-3 pl-6 text-left">Type</th><th class="p-3 text-left">User</th><th class="p-3 text-left">Detail</th></tr>
                                 </thead>
-                                <tbody id="adminHistoryTable"></tbody>
+                                <tbody id="adminHistoryTable" class="divide-y divide-slate-50"></tbody>
                             </table>
                         </div>
                     </div>
@@ -228,52 +346,93 @@
         </div>
     </main>
 
-    <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm">
-            <h3 class="text-xl font-bold text-center mb-6">Admin Login</h3>
-            <input type="password" id="adminPassInput" onkeydown="if(event.key==='Enter') attemptLogin()" class="block w-full text-center text-2xl tracking-widest px-4 py-3 bg-slate-50 border rounded-xl mb-4" placeholder="••••">
-            <p id="loginError" class="text-rose-500 text-xs text-center font-bold mb-4 hidden">Access Denied</p>
-            <button onclick="attemptLogin()" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl">Unlock</button>
-            <button onclick="closeLogin()" class="w-full py-3 mt-2 text-slate-400 text-sm">Cancel</button>
+    <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center">
+            <div class="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-bold ph-lock-key text-xl"></i></div>
+            <h3 class="text-xl font-bold mb-6">Restricted Access</h3>
+            <input type="password" id="adminPassInput" onkeydown="if(event.key==='Enter') attemptLogin()" class="block w-full text-center text-2xl tracking-[0.2em] px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-4 focus:border-slate-900 focus:bg-white transition-colors outline-none" placeholder="••••">
+            <p id="loginError" class="text-rose-500 text-xs font-bold mb-4 hidden bg-rose-50 py-2 rounded-lg">Incorrect Password</p>
+            <button onclick="attemptLogin()" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-transform active:scale-95">Unlock Panel</button>
+            <button onclick="closeLogin()" class="w-full py-3 mt-2 text-slate-400 text-sm hover:text-slate-600">Return</button>
         </div>
     </div>
 
-    <div id="collateralModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm relative">
-            <button onclick="document.getElementById('collateralModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x"></i></button>
-            <h3 class="text-xl font-bold text-center mb-2">Secure Collateral</h3>
-            <p class="text-xs text-center text-slate-500 mb-6"><i class="ph-fill ph-lock-key text-emerald-500"></i> AES-256 Encrypted Storage</p>
+    <div id="collateralModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-600 to-indigo-600"></div>
+            <button onclick="document.getElementById('collateralModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
+            
+            <h3 class="text-xl font-bold text-center mb-1">Secure Collateral</h3>
+            <div class="flex items-center justify-center gap-2 text-xs text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full w-fit mx-auto mb-6 font-medium">
+                <i class="ph-fill ph-lock-key"></i> AES-256 Encrypted
+            </div>
             
             <div class="space-y-3">
-                <input type="text" id="ccName" class="block w-full p-3 border border-slate-200 rounded-xl text-sm" placeholder="Name on Card">
-                <input type="text" id="ccNumber" class="block w-full p-3 border border-slate-200 rounded-xl text-sm font-mono" placeholder="Card Number">
+                <input type="text" id="ccName" class="block w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm input-focus" placeholder="Name on Card">
+                <input type="text" id="ccNumber" class="block w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono input-focus" placeholder="Card Number">
                 <div class="flex gap-3">
-                    <input type="text" id="ccExp" class="flex-1 p-3 border border-slate-200 rounded-xl text-sm text-center" placeholder="MM/YY">
-                    <input type="text" id="ccCvv" class="w-20 p-3 border border-slate-200 rounded-xl text-sm text-center" placeholder="CVV">
+                    <input type="text" id="ccExp" class="flex-1 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center input-focus" placeholder="MM/YY">
+                    <input type="text" id="ccCvv" class="w-24 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center input-focus" placeholder="CVV">
                 </div>
-                <button onclick="submitCollateral()" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl mt-2">Encrypt & Save</button>
+                <button onclick="submitCollateral()" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl mt-2 hover:bg-black shadow-lg">Encrypt & Save</button>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl translate-y-20 opacity-0 transition-all z-50"><p id="toastMessage" class="font-bold text-sm">Notification</p></div>
+    <div id="linkIDModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm relative text-center">
+            <button onclick="document.getElementById('linkIDModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-identification-card text-3xl"></i></div>
+            <h3 class="text-xl font-bold mb-2">Link Student ID</h3>
+            <p class="text-slate-500 text-sm mb-6">Scan your physical ID card now to link it to your account.</p>
+            
+            <input type="text" id="linkIDInput" onkeydown="handleLinkID(event)" class="block w-full p-4 bg-slate-50 border-2 border-indigo-100 rounded-2xl text-center font-mono text-lg focus:border-indigo-500 focus:bg-white outline-none transition-colors" placeholder="Scan ID...">
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <div id="toastIcon" class="text-emerald-400"><i class="ph-fill ph-check-circle text-xl"></i></div>
+        <p id="toastMessage" class="font-medium text-sm">Notification</p>
+    </div>
 
     <script>
         let allBooks = [], activeStudents = [], adminPassword = "";
 
         // UI & NAVIGATION
         function showPage(pageId, btn) {
-            document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('bg-indigo-50', 'text-indigo-700'); el.classList.add('text-slate-600'); });
-            if(btn) { btn.classList.remove('text-slate-600'); btn.classList.add('bg-indigo-50', 'text-indigo-700'); }
+            // Sidebar Active State
+            document.querySelectorAll('.nav-item').forEach(el => { 
+                el.classList.remove('bg-library-50', 'text-library-700'); 
+                el.classList.add('text-slate-500'); 
+            });
+            if(btn) { 
+                btn.classList.remove('text-slate-500'); 
+                btn.classList.add('bg-library-50', 'text-library-700'); 
+            }
+            
+            // Page Transition
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
             
             const titles = { 'catalog': 'Catalogue', 'borrow': 'Check Out', 'return': 'Check In', 'admin': 'Admin', 'myaccount': 'User History' };
-            if(titles[pageId]) document.getElementById('pageTitle').innerText = titles[pageId];
+            const subtitles = { 
+                'catalog': 'Manage library inventory', 
+                'borrow': 'Process new loans', 
+                'return': 'Process returns', 
+                'admin': 'System Dashboard', 
+                'myaccount': 'Your reading log' 
+            };
+            
+            if(titles[pageId]) {
+                document.getElementById('pageTitle').innerText = titles[pageId];
+                document.getElementById('pageSubtitle').innerText = subtitles[pageId];
+            }
 
+            // Auto Focus Logic
             if(pageId === 'borrow') setTimeout(() => document.getElementById('borrowBarcode').focus(), 100);
             if(pageId === 'return') setTimeout(() => document.getElementById('returnBarcode').focus(), 100);
             
+            // Data Loaders
             if(pageId === 'catalog') loadCatalog();
             if(pageId === 'borrow') loadBorrowList();
             if(pageId === 'return') loadReturnList();
@@ -282,10 +441,20 @@
 
         function showToast(msg, type='success') {
             const t = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            
             document.getElementById('toastMessage').innerText = msg;
-            t.className = `fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl transition-all z-50 text-white ${type === 'error' ? 'bg-rose-600' : 'bg-slate-800'}`;
-            t.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3000);
+            
+            if(type === 'error') {
+                icon.innerHTML = '<i class="ph-fill ph-warning-circle text-xl"></i>';
+                icon.className = 'text-rose-400';
+            } else {
+                icon.innerHTML = '<i class="ph-fill ph-check-circle text-xl"></i>';
+                icon.className = 'text-emerald-400';
+            }
+
+            t.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3000);
         }
 
         async function loadCatalog() {
@@ -299,10 +468,31 @@
 
         function renderTable(books) {
             const tbody = document.getElementById('bookTable');
-            if(books.length===0) { tbody.innerHTML='<tr><td colspan="4" class="p-4 text-center text-slate-400">No books found</td></tr>'; return;}
+            const emptyState = document.getElementById('emptyCatalogState');
+
+            if(books.length === 0) { 
+                tbody.innerHTML = ''; 
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
             tbody.innerHTML = books.map(b => {
-                const status = b.available > 0 ? `<span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded-full">Available (${b.available})</span>` : `<span class="text-rose-600 font-bold text-xs bg-rose-50 px-2 py-1 rounded-full">Out of Stock</span>`;
-                return `<tr class="hover:bg-slate-50"><td class="p-4 font-mono text-xs text-slate-500">${b.id}</td><td class="p-4 font-medium">${b.name}</td><td class="p-4 text-slate-500">${b.category}</td><td class="p-4 text-right">${status}</td></tr>`;
+                const available = b.available > 0;
+                const statusBadge = available 
+                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available (${b.available})</span>` 
+                    : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">Out of Stock</span>`;
+                
+                return `
+                <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <td class="p-5 font-mono text-xs text-slate-400 group-hover:text-slate-600">${b.id}</td>
+                    <td class="p-5">
+                        <p class="font-bold text-slate-800 text-sm">${b.name}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Shelf: ${b.shelf}</p>
+                    </td>
+                    <td class="p-5"><span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200">${b.category}</span></td>
+                    <td class="p-5 text-right">${statusBadge}</td>
+                </tr>`;
             }).join('');
         }
 
@@ -312,65 +502,85 @@
         }
 
         // --- BARCODE HANDLER ---
-        function handleBarcode(event, type) {
+        async function handleBarcode(event, type) {
             if (event.key !== 'Enter') return;
             event.preventDefault(); 
             
             const code = event.target.value.trim();
             if (!code) return;
 
+            // 1. Try to find a Book
             const book = allBooks.find(b => String(b.id) === code);
             
-            if (!book) { 
-                showToast("Barcode ID " + code + " not found!", 'error'); 
-                event.target.value = ''; 
-                return; 
+            if (book) {
+                if (type === 'borrow') {
+                    const select = document.getElementById('borrowBookSelect');
+                    select.value = book.name;
+                    if(select.value === book.name) {
+                        event.target.value = ''; 
+                        document.getElementById('borrowEmail').focus(); 
+                        showToast('Book Scanned: ' + book.name);
+                    } else { 
+                        showToast('Book out of stock', 'error'); 
+                        event.target.value = ''; 
+                    }
+                } else if (type === 'return') {
+                    const student = activeStudents.find(s => s.books.includes(book.name));
+                    if (student) {
+                        document.getElementById('returnStudentSelect').value = student.name;
+                        updateReturnBooks(); 
+                        document.getElementById('returnBookSelect').value = book.name;
+                        event.target.value = ''; 
+                        showToast('Return matched: ' + student.name);
+                    } else { 
+                        showToast('Book not currently checked out', 'error'); 
+                        event.target.value = '';
+                    }
+                }
+                return;
             }
 
+            // 2. If not a book, is it a Student ID? (Goal 4 Logic)
             if (type === 'borrow') {
-                const select = document.getElementById('borrowBookSelect');
-                select.value = book.name;
-
-                if(select.value === book.name) {
-                    event.target.value = ''; 
-                    document.getElementById('borrowEmail').focus(); 
-                    showToast('Scanned: ' + book.name);
-                } else { 
-                    showToast('Book out of stock or not in catalog', 'error'); 
-                    event.target.value = ''; 
-                }
-
-            } else if (type === 'return') {
-                const student = activeStudents.find(s => s.books.includes(book.name));
+                const res = await fetch('api.php?action=lookup_student_id', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ student_id: code })
+                });
+                const data = await res.json();
                 
-                if (student) {
-                    document.getElementById('returnStudentSelect').value = student.name;
-                    updateReturnBooks(); 
-                    document.getElementById('returnBookSelect').value = book.name;
-                    event.target.value = ''; 
-                    showToast('Matched: ' + student.name);
-                } else { 
-                    showToast('This book is not currently checked out', 'error'); 
+                if(data.found) {
+                    // Populate User Field
+                    document.getElementById('borrowEmail').value = data.email;
+                    identifyUser(); // Trigger the "Welcome" message
+                    event.target.value = '';
+                    showToast(`Student ID Scanned: ${data.name}`);
+                    // Move focus to submit if book is selected, else to book
+                    // For now, keep focus on scan to allow scanning book next
+                } else {
+                    showToast("Unknown Barcode", 'error');
                     event.target.value = '';
                 }
+            } else {
+                 showToast("Barcode not found", 'error');
+                 event.target.value = '';
             }
         }
 
-        // --- USER AUTH & REGISTRATION ---
+        // --- USER AUTH ---
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
             document.getElementById('authStep2').classList.add('hidden');
             document.getElementById('authStep1').classList.remove('hidden');
             document.getElementById('authNameField').classList.add('hidden'); 
+            document.getElementById('authIdField').classList.add('hidden'); // Reset ID field visibility
             
             const emailInput = document.getElementById('authEmail');
             emailInput.disabled = false;
             emailInput.value = '';
             document.getElementById('authPassword').value = '';
             document.getElementById('authNameInput').value = '';
-            document.getElementById('authMessage').className = 'text-sm font-medium text-slate-600';
+            document.getElementById('authMessage').innerText = "Verify Identity";
             
-            // Clear any lingering event listeners on the password box
             const oldPass = document.getElementById('authPassword');
             const newPass = oldPass.cloneNode(true);
             oldPass.parentNode.replaceChild(newPass, oldPass);
@@ -380,18 +590,15 @@
 
         async function checkUserStatus() {
             const email = document.getElementById('authEmail').value.trim();
-            if(!email) return showToast("Please enter your email", 'error');
+            if(!email) return showToast("Enter email", 'error');
 
             const nextBtn = document.querySelector('#authStep1 button');
-            const originalText = nextBtn.innerText;
             nextBtn.innerText = "Checking...";
             nextBtn.disabled = true;
 
             try {
                 const res = await fetch('api.php?action=check_user_status', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ email }) 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) 
                 });
                 const data = await res.json();
 
@@ -402,36 +609,30 @@
                 const msg = document.getElementById('authMessage');
                 const passInput = document.getElementById('authPassword');
 
-                // Clear previous button listeners
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
 
-                // Clear previous password listeners to handle Enter key correctly
                 const newPassInput = passInput.cloneNode(true);
                 passInput.parentNode.replaceChild(newPassInput, passInput);
 
                 if(data.status === 'exists') {
-                    // LOGIN FLOW
-                    msg.innerHTML = "Welcome back! Enter password:";
+                    msg.innerHTML = `Welcome back, <span class="font-bold text-slate-800">${data.name}</span>`;
                     newPassInput.focus();
-                    newBtn.innerText = "Login & View History";
-                    newBtn.className = "px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700";
+                    newBtn.innerText = "Login";
                     
                     const loginAction = () => performLogin(email);
                     newBtn.onclick = loginAction;
                     newPassInput.onkeydown = (e) => { if(e.key === 'Enter') loginAction(); };
 
                 } else {
-                    // REGISTRATION FLOW
-                    msg.innerHTML = "<span class='text-emerald-600 font-bold'>New Member!</span> Complete registration:";
+                    msg.innerHTML = "New Account Registration";
                     document.getElementById('authNameField').classList.remove('hidden'); 
+                    document.getElementById('authIdField').classList.remove('hidden'); // Show ID field on register
                     document.getElementById('authNameInput').focus();
                     newBtn.innerText = "Create Account";
-                    newBtn.className = "px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700";
                     
                     const regAction = () => performRegistration(email);
                     newBtn.onclick = regAction;
-                    // Add Enter key support for both fields
                     newPassInput.onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
                     document.getElementById('authNameInput').onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
                 }
@@ -439,7 +640,7 @@
                 console.error(e);
                 showToast("Connection Error", "error");
             } finally {
-                nextBtn.innerText = originalText;
+                nextBtn.innerText = "Next";
                 nextBtn.disabled = false;
             }
         }
@@ -447,33 +648,32 @@
         async function performRegistration(email) {
             const password = document.getElementById('authPassword').value;
             const name = document.getElementById('authNameInput').value;
-            if(!password || !name) return showToast("All fields required", 'error');
+            const sid = document.getElementById('authIdInput').value; // Optional
+
+            if(!password || !name) return showToast("Name & Password required", 'error');
 
             const btn = document.getElementById('authBtnAction');
-            const originalText = btn.innerText;
             btn.innerText = "Creating...";
             btn.disabled = true;
 
             try {
                 const res = await fetch('api.php?action=register_user', {
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ email, password, name })
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ email, password, name, student_id: sid })
                 });
                 
                 if(res.ok) {
-                    showToast("Account Created! Logging in...");
+                    showToast("Account Created!");
                     await performLogin(email, password); 
                 } else {
                     const data = await res.json();
-                    showToast(data.error || "Registration Failed", 'error');
-                    btn.innerText = originalText;
+                    showToast(data.error || "Failed", 'error');
+                    btn.innerText = "Create Account";
                     btn.disabled = false;
                 }
             } catch(e) { 
                 console.error(e); 
-                showToast("Connection Error", 'error');
-                btn.innerText = originalText;
+                btn.innerText = "Create Account";
                 btn.disabled = false;
             }
         }
@@ -483,15 +683,11 @@
             if(!password) return showToast("Enter Password", 'error');
 
             const btn = document.getElementById('authBtnAction');
-            if(btn) {
-                btn.innerText = "Logging in...";
-                btn.disabled = true;
-            }
+            if(btn) { btn.innerText = "Verifying..."; btn.disabled = true; }
 
             try {
                 const res = await fetch('api.php?action=user_history', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, 
                     body: JSON.stringify({ email, password }) 
                 });
                 
@@ -499,21 +695,14 @@
                     showToast("Incorrect Password", 'error');
                     document.getElementById('authPassword').value = '';
                     document.getElementById('authPassword').focus();
-                    if(btn) {
-                        btn.innerText = "Login & View History";
-                        btn.disabled = false;
-                    }
+                    if(btn) { btn.innerText = "Login"; btn.disabled = false; }
                 } else {
                     const data = await res.json();
                     renderHistory(data);
                 }
             } catch(e) { 
                 console.error(e);
-                showToast("System Error", 'error'); 
-                if(btn) {
-                    btn.innerText = "Retry";
-                    btn.disabled = false;
-                }
+                if(btn) { btn.innerText = "Retry"; btn.disabled = false; }
             }
         }
 
@@ -524,20 +713,21 @@
             
             const activeDiv = document.getElementById('myActiveList');
             if(data.active.length === 0) {
-                activeDiv.innerHTML = '<li class="text-slate-500 italic">No books currently borrowed.</li>';
+                activeDiv.innerHTML = '<li class="text-indigo-200 text-sm italic py-2">No active loans.</li>';
             } else {
-                activeDiv.innerHTML = data.active.map(b => `<li class="font-bold flex items-center gap-2"><i class="ph-fill ph-book text-indigo-500"></i> ${b}</li>`).join('');
+                activeDiv.innerHTML = data.active.map(b => `<li class="flex items-start gap-3 py-1"><i class="ph-fill ph-book-open text-indigo-400 mt-1"></i> <span>${b}</span></li>`).join('');
             }
 
             document.getElementById('myHistoryTable').innerHTML = data.history.map(h => {
                 const isBorrow = h.Action === 'Borrow';
-                const color = isBorrow ? 'text-indigo-600 bg-indigo-50' : 'text-emerald-600 bg-emerald-50';
-                const icon = isBorrow ? 'ph-upload-simple' : 'ph-download-simple';
+                const badge = isBorrow 
+                    ? `<span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase border border-indigo-100">Borrow</span>` 
+                    : `<span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase border border-emerald-100">Return</span>`;
                 return `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 text-slate-500 text-xs font-mono">${h.Date}</td>
-                    <td class="p-4"><span class="${color} px-2 py-1 rounded text-xs font-bold uppercase flex w-fit items-center gap-1"><i class="ph-bold ${icon}"></i> ${h.Action}</span></td>
-                    <td class="p-4 font-medium text-slate-700">${h.Book}</td>
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 pl-4 text-slate-400 text-xs font-mono">${h.Date}</td>
+                    <td class="p-3">${badge}</td>
+                    <td class="p-3 font-medium text-slate-700">${h.Book}</td>
                 </tr>`;
             }).join('');
         }
@@ -546,31 +736,50 @@
         async function identifyUser() {
             const email = document.getElementById('borrowEmail').value;
             const msg = document.getElementById('borrowIdentityMsg');
-            const nameSpan = document.getElementById('borrowIdentityName');
-            
-            if(!email) { msg.classList.add('hidden'); return; }
+            if(!email) { msg.innerText = ''; return; }
 
             const res = await fetch('api.php?action=check_user_status', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ email }) 
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) 
             });
             const data = await res.json();
             
             if(data.status === 'exists') {
-                msg.classList.remove('hidden', 'text-rose-600');
-                msg.classList.add('text-indigo-600');
-                msg.innerHTML = `Welcome, ${data.name}`;
+                msg.className = 'text-xs font-bold text-center h-4 text-emerald-600';
+                msg.innerHTML = `<i class="ph-fill ph-check-circle"></i> ${data.name}`;
             } else {
-                msg.classList.remove('hidden', 'text-indigo-600');
-                msg.classList.add('text-rose-600');
-                msg.innerHTML = `User not found. Register first!`;
+                msg.className = 'text-xs font-bold text-center h-4 text-rose-500';
+                msg.innerHTML = `User not found`;
             }
         }
 
-        // --- COLLATERAL SYSTEM ---
-        function openCollateralModal() {
-            document.getElementById('collateralModal').classList.remove('hidden');
+        // --- MODALS & EXTRAS ---
+        function openCollateralModal() { document.getElementById('collateralModal').classList.remove('hidden'); }
+        
+        // Link ID Modal
+        function openLinkIDModal() { 
+            document.getElementById('linkIDModal').classList.remove('hidden'); 
+            setTimeout(() => document.getElementById('linkIDInput').focus(), 100);
+        }
+
+        async function handleLinkID(event) {
+            if (event.key !== 'Enter') return;
+            const sid = event.target.value.trim();
+            const email = document.getElementById('authEmail').value;
+            
+            if(!sid) return;
+
+            const res = await fetch('api.php?action=link_student_id', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, student_id: sid })
+            });
+
+            if(res.ok) {
+                showToast("ID Linked Successfully");
+                document.getElementById('linkIDModal').classList.add('hidden');
+                event.target.value = '';
+            } else {
+                showToast("Failed to link ID", 'error');
+            }
         }
 
         async function submitCollateral() {
@@ -582,41 +791,32 @@
                 cvv: document.getElementById('ccCvv').value
             };
 
-            if(!card.number || !card.exp || !card.cvv) return showToast("Incomplete Details", 'error');
+            if(!card.number || !card.exp || !card.cvv) return showToast("Details missing", 'error');
 
             const res = await fetch('api.php?action=save_collateral', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    email: email, 
-                    cardData: JSON.stringify(card) 
-                })
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: email, cardData: JSON.stringify(card) })
             });
 
             if(res.ok) {
-                showToast("Collateral Saved Securely");
+                showToast("Saved Securely");
                 document.getElementById('collateralModal').classList.add('hidden');
                 document.getElementById('ccNumber').value = '';
                 document.getElementById('ccCvv').value = '';
-            } else {
-                showToast("Save Failed", 'error');
-            }
+            } else { showToast("Save Failed", 'error'); }
         }
 
         async function checkCollateral(email) {
             const res = await fetch('api.php?action=get_collateral', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ email: email, password: adminPassword })
             });
             const data = await res.json();
             
             if(data.found) {
-                const details = JSON.parse(data.details);
-                alert(`COLLATERAL FOUND\n\nName: ${details.name}\nNumber: ${details.number}\nExp: ${details.exp}\nCVV: ${details.cvv}\n\nUpdated: ${data.date}`);
-            } else {
-                alert("No collateral on file for this user.");
-            }
+                const d = JSON.parse(data.details);
+                alert(`Name: ${d.name}\nCard: ${d.number}\nExp: ${d.exp}\nCVV: ${d.cvv}`);
+            } else { alert("No card on file."); }
         }
         
         function inspectUser(email) {
@@ -643,28 +843,29 @@
         
         function loadAdminData(loans) {
             const tbody = document.getElementById('adminActiveTable');
+            
+            // Stats
+            document.getElementById('statLoans').innerText = loans.length;
+            document.getElementById('statOverdue').innerText = loans.filter(l => l.isOverdue).length;
+            
             if (loans.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">No active loans.</td></tr>'; 
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">No active loans.</td></tr>'; 
             } else {
                 tbody.innerHTML = loans.map(l => {
-                    const rowClass = l.isOverdue ? 'bg-rose-50' : '';
+                    const statusClass = l.isOverdue ? 'bg-rose-50/50' : '';
+                    const dayLabel = l.isOverdue 
+                        ? `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-md"><i class="ph-bold ph-warning"></i> +${Math.abs(l.daysLeft)} Days</span>` 
+                        : `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">${l.daysLeft} Days left</span>`;
                     
-                    let name = l.student; 
-                    let email = l.email; 
-
-                    // Countdown Logic
-                    const dayLabel = l.isOverdue ? `<span class="text-rose-600 font-bold">OVERDUE +${Math.abs(l.daysLeft)} days</span>` : `<span class="text-emerald-600 font-bold">${l.daysLeft} days left</span>`;
-                    
-                    // Collateral Logic
                     const cardIcon = l.hasCollateral 
-                        ? `<button onclick="checkCollateral('${email}')" class="text-purple-600 hover:text-purple-800" title="View Collateral"><i class="ph-fill ph-credit-card"></i></button>`
-                        : `<button class="text-rose-300 cursor-not-allowed" title="No Collateral"><i class="ph-fill ph-warning-circle"></i></button>`;
+                        ? `<button onclick="checkCollateral('${l.email}')" class="text-purple-600 hover:text-purple-800 transition-colors" title="View Collateral"><i class="ph-fill ph-credit-card text-xl"></i></button>`
+                        : `<span class="text-slate-200" title="No Collateral"><i class="ph-fill ph-credit-card text-xl"></i></span>`;
 
-                    return `<tr class="${rowClass} border-b border-slate-50 last:border-0">
-                        <td class="p-2"><button onclick="inspectUser('${email}')" class="text-indigo-600 hover:underline font-bold text-left">${name}</button></td>
-                        <td class="p-2 text-xl">${cardIcon}</td>
-                        <td class="p-2 text-sm">${l.book}</td>
-                        <td class="p-2 text-xs">${dayLabel}</td>
+                    return `<tr class="${statusClass} border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                        <td class="p-4"><button onclick="inspectUser('${l.email}')" class="text-library-600 hover:text-library-800 font-bold text-sm text-left hover:underline">${l.student}</button></td>
+                        <td class="p-4 pl-8">${cardIcon}</td>
+                        <td class="p-4 text-sm text-slate-700 font-medium">${l.book}</td>
+                        <td class="p-4">${dayLabel}</td>
                     </tr>`;
                 }).join('');
             }
@@ -674,28 +875,26 @@
             const res = await fetch('api.php?action=admin_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) });
             const history = await res.json();
             document.getElementById('adminHistoryTable').innerHTML = history.map(h => {
-                const badge = h.Action === 'Borrow' ? '<span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 text-xs font-bold uppercase">Out</span>' : '<span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-xs font-bold uppercase">In</span>';
-                let displayWho = h.Student;
-                const match = h.Student.match(/(.*) <(.*)>/);
-                if(match) displayWho = `<span class="font-bold">${match[1]}</span> <br> <span class="text-xs text-slate-400">${match[2]}</span>`;
-                return `<tr><td class="p-2">${badge}</td><td class="p-2 text-slate-600 leading-tight">${displayWho}</td><td class="p-2 text-slate-500 text-xs">${h.Book} <br> <span class="text-slate-400">${h.Date}</span></td></tr>`;
+                const isBorrow = h.Action === 'Borrow';
+                const badge = isBorrow ? '<span class="text-indigo-600 font-bold text-xs">OUT</span>' : '<span class="text-emerald-600 font-bold text-xs">IN</span>';
+                return `<tr class="hover:bg-slate-50"><td class="p-3 pl-6">${badge}</td><td class="p-3 text-slate-600 text-xs">${h.Student}</td><td class="p-3 text-slate-500 text-xs">${h.Book} <span class="text-slate-300 mx-1">•</span> ${h.Date}</td></tr>`;
             }).join('');
         }
         
         async function reloadCatalog() {
              const res = await fetch('api.php?action=admin_reload', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) });
-             if(res.ok) showToast("Reloaded");
+             if(res.ok) showToast("System Reloaded");
         }
 
         async function loadBorrowList() {
             await loadCatalog(); 
             const avail = allBooks.filter(b => b.available > 0);
-            document.getElementById('borrowBookSelect').innerHTML = '<option value="">Select...</option>' + avail.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+            document.getElementById('borrowBookSelect').innerHTML = '<option value="">Select Book...</option>' + avail.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
         }
         async function loadReturnList() {
             const res = await fetch('api.php?action=students');
             activeStudents = await res.json();
-            document.getElementById('returnStudentSelect').innerHTML = '<option value="">Select...</option>' + activeStudents.map(s => {
+            document.getElementById('returnStudentSelect').innerHTML = '<option value="">Select Student...</option>' + activeStudents.map(s => {
                 let name = s.name;
                 const match = s.name.match(/(.*) <(.*)>/);
                 if(match) name = match[1];
@@ -720,13 +919,11 @@
             }
             const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student, book, action }) });
             if(res.ok) {
-                // GOAL 5: Let user know email was sent
-                const emailMsg = action === 'Borrow' ? `Confirmation sent to ${student}` : 'Book returned';
+                const emailMsg = action === 'Borrow' ? `Confirmation sent to user` : 'Book returned';
                 showToast(emailMsg);
-                
-                if(action === 'Borrow') { document.getElementById('borrowEmail').value = ''; document.getElementById('borrowIdentityMsg').classList.add('hidden'); loadBorrowList(); }
+                if(action === 'Borrow') { document.getElementById('borrowEmail').value = ''; document.getElementById('borrowIdentityMsg').innerText = ''; loadBorrowList(); }
                 else loadReturnList();
-            } else showToast('Error', 'error');
+            } else showToast('Error processing transaction', 'error');
         }
 
         loadCatalog();
