@@ -5,7 +5,7 @@ $trans_csv = 'transactions.csv';
 $users_file = 'users.json'; 
 $collateral_file = 'collateral.json'; 
 $admin_password = "1234"; 
-$n8n_webhook = "https://n8n.srv1091500.hstgr.cloud/webhook-test/library-transaction"; // n8n
+$n8n_webhook = "https://n8n.srv1091500.hstgr.cloud/webhook/library-transaction"; // n8n
 
 // SECURITY: Change this to a random 32-character string!
 $encryption_key = "eNQ>4'Ns&n`qxj9N!'BQRL>KZ^HK[)]h"; 
