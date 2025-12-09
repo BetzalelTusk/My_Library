@@ -24,7 +24,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 function sanitize_input($data) {
     if (is_array($data)) return array_map('sanitize_input', $data);
     $data = trim($data);
-    $data = strip_tags($data); 
+    // CRITICAL FIX: Changed from strip_tags to htmlspecialchars to preserve <emails>
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    // Prevent Excel Injection
     if (in_array(substr($data, 0, 1), ['=', '+', '-', '@'])) $data = "'" . $data;
     return $data;
 }
@@ -46,11 +48,12 @@ function read_transactions_safe($filename) {
         fgetcsv($handle); 
         while (($data = fgetcsv($handle)) !== FALSE) {
             if(count($data) >= 4) {
+                // We decode entities when reading back so logic works (e.g. < becomes < again)
                 $rows[] = [
-                    'Student' => sanitize_input($data[0] ?? 'Unknown'), 
-                    'Book' => sanitize_input($data[1] ?? 'Unknown'), 
-                    'Action' => sanitize_input($data[2] ?? '-'), 
-                    'Date' => sanitize_input($data[3] ?? '')
+                    'Student' => htmlspecialchars_decode($data[0] ?? 'Unknown'), 
+                    'Book' => htmlspecialchars_decode($data[1] ?? 'Unknown'), 
+                    'Action' => htmlspecialchars_decode($data[2] ?? '-'), 
+                    'Date' => htmlspecialchars_decode($data[3] ?? '')
                 ];
             }
         }
@@ -65,6 +68,7 @@ if (!file_exists($collateral_file)) file_put_contents($collateral_file, "{}");
 
 try {
     $raw_input = json_decode(file_get_contents('php://input'), true);
+    // Apply sanitization to input
     $input = $raw_input ? sanitize_input($raw_input) : [];
 
     // 1. GET CATALOG
@@ -76,10 +80,10 @@ try {
                 if(isset($data[0]) && $data[0] !== '') { 
                     $copies = (!empty($data[4])) ? (int)$data[4] : 1;
                     $books_raw[] = [
-                        'id' => sanitize_input($data[0]),
-                        'name' => sanitize_input($data[1] ?? 'Unknown'),
-                        'category' => sanitize_input($data[2] ?? 'Uncategorized'),
-                        'shelf' => sanitize_input($data[3] ?? '?'),
+                        'id' => htmlspecialchars($data[0]),
+                        'name' => htmlspecialchars($data[1] ?? 'Unknown'),
+                        'category' => htmlspecialchars($data[2] ?? 'Uncategorized'),
+                        'shelf' => htmlspecialchars($data[3] ?? '?'),
                         'copies' => $copies
                     ];
                 }
@@ -98,7 +102,9 @@ try {
 
         $catalog = [];
         foreach ($books_raw as $b) {
-            $activeLoans = $loans[$b['name']] ?? 0;
+            // Decode name for matching against transactions
+            $realName = htmlspecialchars_decode($b['name']);
+            $activeLoans = $loans[$realName] ?? 0;
             $b['available'] = max(0, $b['copies'] - $activeLoans);
             $b['total'] = $b['copies'];
             $catalog[] = $b;
@@ -159,11 +165,13 @@ try {
         exit;
     }
 
-    // 5. USER HISTORY (FIXED: SMART SEARCH)
+    // 5. USER HISTORY
     if ($action === 'user_history' && $method === 'POST') {
         $email = strtolower($input['email'] ?? '');
         $password = $input['password'] ?? '';
         $isAdmin = ($password === $admin_password);
+
+        if (empty($email)) { echo json_encode(['history' => [], 'active' => []]); exit; }
 
         $users = json_decode(file_get_contents($users_file), true) ?? [];
         $targetName = '';
@@ -176,7 +184,6 @@ try {
             } else { http_response_code(401); echo json_encode(['error' => 'Account not found']); exit; }
         }
 
-        // Get Name from DB to help find legacy transactions
         if(isset($users[$email])) {
             $userData = $users[$email];
             $targetName = is_array($userData) ? strtolower($userData['name'] ?? '') : '';
@@ -190,19 +197,9 @@ try {
             $rawStudent = strtolower($t['Student']);
             $isMatch = false;
 
-            // 1. Check if the string contains the email (e.g. "Name <email@site.com>")
-            if (strpos($rawStudent, $email) !== false) {
-                $isMatch = true;
-            }
-            // 2. Check if the string IS the email (Legacy)
-            elseif ($rawStudent === $email) {
-                $isMatch = true;
-            }
-            // 3. Check if the string matches the user's Real Name (Legacy)
-            elseif ($targetName !== '' && $rawStudent === $targetName) {
-                $isMatch = true;
-            }
-
+            if (!empty($email) && strpos($rawStudent, $email) !== false) $isMatch = true;
+            elseif (!empty($targetName) && strpos($rawStudent, $targetName) !== false) $isMatch = true;
+            
             if ($isMatch) {
                 $userHistory[] = $t;
                 if(!isset($activeBooks[$t['Book']])) $activeBooks[$t['Book']] = 0;
@@ -218,12 +215,14 @@ try {
 
     // 6. TRANSACTION
     if ($action === 'transaction' && $method === 'POST') {
-        $studentInput = str_replace('"', '""', $input['student'] ?? 'Unknown');
-        $book = str_replace('"', '""', $input['book'] ?? 'Unknown');
+        // Use Raw input for logic, sanitize for storage
+        $rawStudentInput = $raw_input['student'] ?? 'Unknown';
+        $rawBookInput = $raw_input['book'] ?? 'Unknown';
+        
         $act = $input['action'] ?? 'Error';
         $date = date("Y-m-d H:i:s");
         
-        $email = strtolower(trim($studentInput));
+        $email = strtolower(trim($rawStudentInput));
         $users = json_decode(file_get_contents($users_file), true) ?? [];
         $realName = 'Student';
 
@@ -232,15 +231,21 @@ try {
              $realName = is_array($userData) ? ($userData['name'] ?? 'Unknown') : 'Student';
              $student = "$realName <$email>"; 
         } else {
-             $student = $studentInput;
+             $student = $rawStudentInput;
         }
 
-        $line = "\"$student\",\"$book\",\"$act\",\"$date\"\n";
+        // Sanitize for CSV storage
+        $safeStudent = sanitize_input($student);
+        $safeBook = sanitize_input($rawBookInput);
+        $safeAct = sanitize_input($act);
+        $safeDate = sanitize_input($date);
+
+        $line = "\"$safeStudent\",\"$safeBook\",\"$safeAct\",\"$safeDate\"\n";
         file_put_contents($trans_csv, $line, FILE_APPEND);
 
         if (!empty($n8n_webhook)) {
             $dueDate = date('Y-m-d', strtotime($date . ' + 14 days')); 
-            $payload = json_encode(['student_name' => $realName, 'student_email' => $email, 'book_title' => $book, 'action' => $act, 'transaction_date' => $date, 'due_date' => $dueDate]);
+            $payload = json_encode(['student_name' => $realName, 'student_email' => $email, 'book_title' => $rawBookInput, 'action' => $act, 'transaction_date' => $date, 'due_date' => $dueDate]);
             $ch = curl_init($n8n_webhook);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
