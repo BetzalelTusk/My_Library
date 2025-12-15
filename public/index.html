@@ -6,57 +6,256 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            background-color: #f8f9fa;
-            padding: 20px;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-bg: #e4e7eb;
+            --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            --hover-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
 
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Poppins', sans-serif;
+            color: #2d3748;
+            padding-bottom: 40px;
+        }
+
+        /* --- TYPOGRAPHY & HEADER --- */
+        h1 {
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-section {
+            padding: 40px 0 20px;
+            text-align: center;
+        }
+
+        /* --- CARDS & CONTAINERS --- */
         .card {
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            background: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+
+        /* Hover effect only for interaction cards */
+        .interaction-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-pills {
+            background: white;
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+            display: inline-flex;
+            gap: 5px;
         }
 
         .nav-pills .nav-link {
-            cursor: pointer;
+            border-radius: 30px;
+            padding: 10px 25px;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pills .nav-link:hover {
+            background-color: #edf2f7;
+            color: #2d3748;
         }
 
         .nav-pills .nav-link.active {
-            background-color: #0d6efd;
+            background: var(--primary-gradient);
             color: white !important;
+            box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
         }
 
+        /* Collapsible Menu Animation */
+        #navContainer {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 100px;
+            opacity: 1;
+            overflow: hidden;
+        }
+
+        #navContainer.hidden {
+            max-height: 0;
+            opacity: 0;
+            margin: 0 !important;
+        }
+
+        /* --- BUTTONS & INPUTS --- */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.35);
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 12px;
+            border: 2px solid #edf2f7;
+            padding: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        /* --- TABLES --- */
         .table-responsive {
-            max-height: 60vh;
-            overflow-y: auto;
+            border-radius: 15px;
+        }
+
+        .table {
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .table thead th {
+            background-color: #f7fafc;
+            color: #4a5568;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #edf2f7;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f2f5;
+            color: #2d3748;
+        }
+
+        /* Status Badges */
+        .badge {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.8em;
+        }
+
+        .bg-success {
+            background-color: #c6f6d5 !important;
+            color: #22543d;
+        }
+
+        .bg-danger {
+            background-color: #fed7d7 !important;
+            color: #822727;
         }
 
         .overdue {
-            background-color: #ffe6e6 !important;
-            color: #cc0000;
-            font-weight: bold;
+            background-color: #fff5f5 !important;
+        }
+
+        .overdue td {
+            color: #c53030;
+            font-weight: 600;
+        }
+
+        /* --- UTILS --- */
+        .page-section {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Toggle Button */
+        .toggle-btn {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            color: #4a5568;
+            transition: 0.2s;
+        }
+
+        .toggle-btn:hover {
+            transform: scale(1.1);
+            color: #667eea;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1 class="mb-4 text-center">📚 Library Manager</h1>
+    <div class="container" style="max-width: 1000px;">
 
-        <ul class="nav nav-pills mb-4 justify-content-center">
-            <li class="nav-item"><a class="nav-link active" onclick="showPage('catalog', this)">📖 Catalogue</a></li>
-            <li class="nav-item"><a class="nav-link" onclick="showPage('borrow', this)">📤 Sign Out</a></li>
-            <li class="nav-item"><a class="nav-link" onclick="showPage('return', this)">📥 Sign In</a></li>
-            <li class="nav-item"><a class="nav-link bg-dark text-white ms-3" onclick="checkAdmin()">🔐 Admin</a></li>
-        </ul>
+        <div class="header-section">
+            <div class="d-flex justify-content-center align-items-center gap-3">
+                <h1>📚 Library Manager</h1>
+                <button class="toggle-btn" onclick="toggleNav()" title="Toggle Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        class="bi bi-list" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd"
+                            d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-muted">Manage your inventory, loans, and returns efficiently.</p>
+        </div>
+
+        <div id="navContainer" class="text-center mb-4">
+            <ul class="nav nav-pills">
+                <li class="nav-item"><a class="nav-link active" onclick="showPage('catalog', this)">Catalogue</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="showPage('borrow', this)">Sign Out</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="showPage('return', this)">Sign In</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="checkAdmin()">Admin</a></li>
+            </ul>
+        </div>
 
         <div id="catalog" class="page-section">
-            <div class="card p-3">
-                <input type="text" id="searchBox" class="form-control mb-3" placeholder="🔍 Search titles..."
-                    onkeyup="filterCatalog()">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead class="sticky-top bg-white">
+            <div class="card p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#667eea"
+                        class="bi bi-search me-2" viewBox="0 0 16 16">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                    </svg>
+                    <input type="text" id="searchBox" class="form-control" placeholder="Search by book title..."
+                        onkeyup="filterCatalog()" style="border-radius: 30px;">
+                </div>
+
+                <div class="table-responsive" style="max-height: 65vh;">
+                    <table class="table table-hover">
+                        <thead class="sticky-top">
                             <tr>
                                 <th>Title</th>
                                 <th>Category</th>
@@ -71,46 +270,50 @@
         </div>
 
         <div id="borrow" class="page-section d-none">
-            <div class="card p-4 mx-auto" style="max-width: 500px;">
-                <h3>Check Out Book</h3>
+            <div class="card interaction-card p-5 mx-auto" style="max-width: 500px;">
+                <h3 class="text-center mb-4">📤 Check Out Book</h3>
                 <div class="mb-3">
-                    <label>Student Name</label>
-                    <input type="text" id="borrowStudent" class="form-control" placeholder="Enter Name...">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Student Name</label>
+                    <input type="text" id="borrowStudent" class="form-control" placeholder="Enter Your Email">
                 </div>
-                <div class="mb-3">
-                    <label>Select Book</label>
-                    <select id="borrowBookSelect" class="form-control"></select>
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Select Book</label>
+                    <select id="borrowBookSelect" class="form-select"></select>
                 </div>
                 <button onclick="submitTransaction('Borrow')" class="btn btn-primary w-100">Confirm Borrow</button>
             </div>
         </div>
 
         <div id="return" class="page-section d-none">
-            <div class="card p-4 mx-auto" style="max-width: 500px;">
-                <h3>Return Book</h3>
+            <div class="card interaction-card p-5 mx-auto" style="max-width: 500px;">
+                <h3 class="text-center mb-4">📥 Return Book</h3>
                 <div class="mb-3">
-                    <label>Select Student</label>
-                    <select id="returnStudentSelect" class="form-control" onchange="updateReturnBooks()"></select>
+                    <label class="form-label text-muted small fw-bold text-uppercase">Select Student</label>
+                    <select id="returnStudentSelect" class="form-select" onchange="updateReturnBooks()"></select>
                 </div>
-                <div class="mb-3">
-                    <label>Select Book to Return</label>
-                    <select id="returnBookSelect" class="form-control"></select>
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Select Book to Return</label>
+                    <select id="returnBookSelect" class="form-select"></select>
                 </div>
-                <button onclick="submitTransaction('Return')" class="btn btn-success w-100">Confirm Return</button>
+                <button onclick="submitTransaction('Return')" class="btn btn-primary w-100"
+                    style="background: #48bb78; box-shadow: 0 4px 6px rgba(72, 187, 120, 0.25);">Confirm Return</button>
             </div>
         </div>
 
         <div id="admin" class="page-section d-none">
             <div class="card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>🔐 Admin Dashboard</h3>
-                    <button onclick="reloadCatalog()" class="btn btn-warning btn-sm">↻ Reload Catalog from CSV</button>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="m-0">🔐 Admin Dashboard</h3>
+                    <button onclick="reloadCatalog()" class="btn btn-outline-warning btn-sm fw-bold">↻ Reload
+                        CSV</button>
                 </div>
 
-                <h5 class="text-primary mt-4">⚠️ Current Active Loans</h5>
-                <div class="table-responsive mb-4">
-                    <table class="table table-bordered">
-                        <thead class="table-dark">
+                <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.8rem; letter-spacing: 1px;">
+                    Current Active Loans</h6>
+                <div class="table-responsive mb-5"
+                    style="border-radius: 12px; overflow: hidden; border: 1px solid #edf2f7;">
+                    <table class="table">
+                        <thead class="table-light">
                             <tr>
                                 <th>Student</th>
                                 <th>Book</th>
@@ -122,10 +325,12 @@
                     </table>
                 </div>
 
-                <h5 class="text-secondary">📜 Transaction History (In & Out)</h5>
-                <div class="table-responsive">
+                <h6 class="text-uppercase text-muted fw-bold mb-3" style="font-size: 0.8rem; letter-spacing: 1px;">
+                    Transaction History</h6>
+                <div class="table-responsive"
+                    style="max-height: 400px; border-radius: 12px; border: 1px solid #edf2f7;">
                     <table class="table table-sm table-striped">
-                        <thead>
+                        <thead class="sticky-top bg-white">
                             <tr>
                                 <th>Date</th>
                                 <th>Action</th>
@@ -146,11 +351,21 @@
         let activeStudents = [];
         let adminPassword = "";
 
+        // TOGGLE NAV FUNCTION
+        function toggleNav() {
+            const menu = document.getElementById('navContainer');
+            menu.classList.toggle('hidden');
+        }
+
         function showPage(pageId, btn) {
+            // Hide all pages
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('d-none'));
+            // Reset nav buttons
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
 
+            // Show selected page
             document.getElementById(pageId).classList.remove('d-none');
+            // Activate button if clicked directly
             if (btn) btn.classList.add('active');
 
             if (pageId === 'catalog') loadCatalog();
@@ -173,10 +388,15 @@
             if (res.status === 403) {
                 alert("Incorrect Password!");
             } else {
+                // Manually handle the UI switch for Admin
+                document.querySelectorAll('.page-section').forEach(el => el.classList.add('d-none'));
+                document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+
                 document.getElementById('admin').classList.remove('d-none');
-                document.querySelectorAll('.page-section').forEach(el => {
-                    if (el.id !== 'admin') el.classList.add('d-none');
-                });
+                // Find the admin button to set it active
+                const adminBtn = document.querySelectorAll('.nav-link')[3];
+                adminBtn.classList.add('active');
+
                 loadAdminData(await res.json());
                 loadHistory();
             }
@@ -189,7 +409,7 @@
             let overdueNames = [];
 
             if (loans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No books checked out.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No books currently checked out.</td></tr>';
             } else {
                 tbody.innerHTML = loans.map(l => {
                     if (l.isOverdue) {
@@ -197,13 +417,16 @@
                         overdueNames.push(l.student + " (" + l.book + ")");
                     }
                     const rowClass = l.isOverdue ? 'overdue' : '';
-                    const dateText = new Date(l.date).toLocaleDateString() + ' ' + new Date(l.date).toLocaleTimeString();
-                    return '<tr class="' + rowClass + '"><td>' + l.student + '</td><td>' + l.book + '</td><td>' + dateText + '</td><td>' + l.daysHeld + ' days</td></tr>';
+                    const dateText = new Date(l.date).toLocaleDateString();
+                    return '<tr class="' + rowClass + '"><td>' + l.student + '</td><td class="fw-bold">' + l.book + '</td><td>' + dateText + '</td><td>' + l.daysHeld + ' days</td></tr>';
                 }).join('');
             }
 
             if (overdueCount > 0) {
-                alert("⚠️ WARNING: There are " + overdueCount + " overdue books!\\n\\n" + overdueNames.join("\\n"));
+                // Using a slight delay to allow UI to render first
+                setTimeout(() => {
+                    alert("⚠️ ALERT: " + overdueCount + " books are overdue (>14 days)!\n\nCheck the highlighted rows.");
+                }, 500);
             }
         }
 
@@ -217,8 +440,10 @@
             const tbody = document.getElementById('adminHistoryTable');
 
             tbody.innerHTML = history.map(h => {
-                const color = h.Action === 'Borrow' ? 'text-danger' : 'text-success';
-                return '<tr><td>' + h.Date + '</td><td class="' + color + ' fw-bold">' + h.Action + '</td><td>' + h.Student + '</td><td>' + h.Book + '</td></tr>';
+                const badge = h.Action === 'Borrow'
+                    ? '<span class="badge bg-danger bg-opacity-10 text-danger">Out</span>'
+                    : '<span class="badge bg-success bg-opacity-10 text-success">In</span>';
+                return '<tr><td class="text-muted small">' + h.Date + '</td><td>' + badge + '</td><td>' + h.Student + '</td><td>' + h.Book + '</td></tr>';
             }).join('');
         }
 
@@ -244,7 +469,7 @@
                 const status = b.available > 0
                     ? '<span class="badge bg-success">Available (' + b.available + ')</span>'
                     : '<span class="badge bg-danger">Out of Stock</span>';
-                return '<tr><td>' + b.name + '</td><td>' + b.category + '</td><td>' + b.shelf + '</td><td>' + status + '</td></tr>';
+                return '<tr><td class="fw-bold">' + b.name + '</td><td class="text-muted">' + b.category + '</td><td>' + b.shelf + '</td><td>' + status + '</td></tr>';
             }).join('');
         }
 
@@ -267,7 +492,7 @@
             const studentSelect = document.getElementById('returnStudentSelect');
 
             if (activeStudents.length === 0) {
-                studentSelect.innerHTML = '<option>No active loans</option>';
+                studentSelect.innerHTML = '<option>No active loans found</option>';
                 document.getElementById('returnBookSelect').innerHTML = '';
                 return;
             }
@@ -306,7 +531,7 @@
             });
 
             if (res.ok) {
-                alert(action + ' Successful!');
+                alert('✅ ' + action + ' Successful!');
                 if (action === 'Borrow') {
                     document.getElementById('borrowStudent').value = '';
                     loadBorrowList();
@@ -318,6 +543,7 @@
             }
         }
 
+        // Init
         loadCatalog();
     </script>
 </body>

@@ -2,12 +2,12 @@ const express = require('express');
 const fs = require('fs');
 const csv = require('csv-parser');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // --- CONFIGURATION ---
 const BOOK_CSV = 'Mevs_English_Library 2025 - Sheet1.csv';
 const TRANS_CSV = 'transactions.csv';
-const ADMIN_PASSWORD = "1234"; // <--- CHANGE PASSWORD HERE
+const ADMIN_PASSWORD = "Betzalel Tusk"; // <--- CHANGE PASSWORD HERE
 
 app.use(express.json());
 // This line automatically serves index.html from the 'public' folder
