@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LibraryOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -24,27 +24,38 @@
         .fade-enter { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .glass-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
         .input-focus { @apply focus:ring-4 focus:ring-library-100 focus:border-library-500 transition-all duration-200; }
+        
+        /* Mobile Drawer Transition */
+        .drawer { transition: transform 0.3s ease-in-out; }
+        .drawer-open { transform: translateX(0); }
+        .drawer-closed { transform: translateX(-100%); }
     </style>
 </head>
 <body class="text-slate-800 h-screen flex overflow-hidden font-sans antialiased selection:bg-library-100 selection:text-library-900">
 
-    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col justify-between hidden md:flex z-20 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+    <div id="mobileOverlay" onclick="toggleSidebar()" class="fixed inset-0 glass-overlay z-40 hidden md:hidden fade-enter"></div>
+
+    <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 flex flex-col justify-between drawer drawer-closed md:relative md:translate-x-0 shadow-2xl md:shadow-none">
         <div>
-            <div class="h-24 flex items-center px-8 border-b border-slate-50">
+            <div class="h-16 md:h-24 flex items-center px-6 md:px-8 border-b border-slate-50 justify-between md:justify-start">
                 <div class="flex items-center gap-3 text-library-600">
                     <div class="bg-library-50 p-2 rounded-xl">
                         <i class="ph-fill ph-books text-2xl"></i>
                     </div>
                     <span class="font-bold text-xl tracking-tight text-slate-900">LibraryOS</span>
                 </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 p-2"><i class="ph-bold ph-x text-xl"></i></button>
             </div>
 
-            <nav class="p-6 space-y-2">
+            <nav class="p-4 md:p-6 space-y-2">
                 <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Main Menu</div>
                 <button onclick="showPage('catalog', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl bg-library-50 text-library-700 transition-all duration-200 group">
                     <i class="ph ph-book-open text-xl group-hover:scale-110 transition-transform"></i> Catalogue
@@ -70,15 +81,15 @@
         </div>
     </aside>
 
-    <div class="md:hidden fixed top-0 w-full bg-white/90 backdrop-blur-md border-b z-30 px-4 h-16 flex items-center justify-between">
+    <div class="md:hidden fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 z-30 px-4 h-16 flex items-center justify-between shadow-sm">
         <span class="font-bold text-lg text-library-600 flex items-center gap-2"><i class="ph-fill ph-books"></i> LibraryOS</span>
-        <button onclick="document.querySelector('aside').classList.toggle('hidden'); document.querySelector('aside').classList.toggle('absolute'); document.querySelector('aside').classList.toggle('h-full');" class="p-2 rounded-lg bg-slate-100 text-slate-600">
-            <i class="ph ph-list text-xl"></i>
+        <button onclick="toggleSidebar()" class="p-2 rounded-lg bg-slate-50 text-slate-600 active:bg-slate-200">
+            <i class="ph ph-list text-2xl"></i>
         </button>
     </div>
 
     <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-16 md:pt-0 bg-[#f8fafc]">
-        <header class="h-24 flex items-center justify-between px-8 md:px-12 shrink-0">
+        <header class="h-auto py-6 md:py-0 md:h-24 flex items-center justify-between px-6 md:px-12 shrink-0">
             <div>
                 <h2 id="pageTitle" class="text-2xl font-bold text-slate-800 tracking-tight">Catalogue</h2>
                 <p id="pageSubtitle" class="text-sm text-slate-500 font-medium mt-1">Manage library inventory</p>
@@ -92,24 +103,26 @@
         <div class="flex-1 overflow-y-auto px-4 md:px-12 pb-12">
             
             <div id="catalog" class="page-section fade-enter max-w-7xl mx-auto">
-                <div class="relative group mb-8 shadow-sm">
+                <div class="relative group mb-6 md:mb-8 shadow-sm">
                     <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                         <i class="ph ph-magnifying-glass text-slate-400 text-xl group-focus-within:text-library-500 transition-colors"></i>
                     </div>
-                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full pl-14 pr-4 py-5 bg-white border border-slate-200 rounded-2xl text-lg shadow-sm input-focus placeholder-slate-400" placeholder="Search by title, author, or scan barcode...">
+                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full pl-14 pr-4 py-4 md:py-5 bg-white border border-slate-200 rounded-2xl text-base md:text-lg shadow-sm input-focus placeholder-slate-400" placeholder="Search title, author, or scan...">
                 </div>
                 <div class="bg-white rounded-3xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50 text-xs font-bold uppercase text-slate-500 tracking-wider">
-                            <tr>
-                                <th class="p-5 border-b border-slate-100 w-32">ID</th>
-                                <th class="p-5 border-b border-slate-100">Title & Details</th>
-                                <th class="p-5 border-b border-slate-100">Category</th>
-                                <th class="p-5 border-b border-slate-100 text-right">Availability</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bookTable" class="divide-y divide-slate-50 text-sm"></tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[600px]">
+                            <thead class="bg-slate-50 text-xs font-bold uppercase text-slate-500 tracking-wider">
+                                <tr>
+                                    <th class="p-5 border-b border-slate-100 w-32">ID</th>
+                                    <th class="p-5 border-b border-slate-100">Title & Details</th>
+                                    <th class="p-5 border-b border-slate-100">Category</th>
+                                    <th class="p-5 border-b border-slate-100 text-right">Availability</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookTable" class="divide-y divide-slate-50 text-sm"></tbody>
+                        </table>
+                    </div>
                     <div id="emptyCatalogState" class="hidden p-12 text-center">
                         <div class="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                             <i class="ph ph-books text-3xl"></i>
@@ -119,9 +132,9 @@
                 </div>
             </div>
 
-            <div id="borrow" class="page-section hidden fade-enter min-h-full flex flex-col items-center pt-8 pb-20">
+            <div id="borrow" class="page-section hidden fade-enter min-h-full flex flex-col items-center pt-4 md:pt-8 pb-20">
                 <div class="w-full max-w-lg">
-                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-library-500 to-indigo-400"></div>
                         <div class="text-center mb-8">
                             <div class="w-16 h-16 bg-library-50 text-library-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-shopping-cart text-3xl"></i></div>
@@ -132,7 +145,7 @@
                         <div class="space-y-5">
                             <div>
                                 <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">1. Identify User</label>
-                                <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full p-3 bg-white border border-slate-200 rounded-xl text-sm input-focus mb-1" placeholder="Scan Student ID or Type Email">
+                                <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full p-4 md:p-3 bg-white border border-slate-200 rounded-xl text-base md:text-sm input-focus mb-1" placeholder="Scan Student ID or Type Email">
                                 <p id="borrowIdentityMsg" class="text-xs font-bold text-center h-4"></p>
                             </div>
 
@@ -140,7 +153,7 @@
                                 <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">2. Scan Books</label>
                                 <div class="relative group">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="ph-bold ph-scan text-library-500 text-lg"></i></div>
-                                    <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-lg focus:bg-white focus:border-library-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Books...">
+                                    <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-base md:text-lg focus:bg-white focus:border-library-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Books...">
                                 </div>
                             </div>
 
@@ -158,9 +171,9 @@
                 </div>
             </div>
 
-            <div id="return" class="page-section hidden fade-enter min-h-full flex flex-col items-center pt-8 pb-20">
+            <div id="return" class="page-section hidden fade-enter min-h-full flex flex-col items-center pt-4 md:pt-8 pb-20">
                 <div class="w-full max-w-lg">
-                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
                         <div class="text-center mb-8">
                             <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-download-simple text-3xl"></i></div>
@@ -172,7 +185,7 @@
                                 <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">Quick Scan</label>
                                 <div class="relative group">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="ph-bold ph-scan text-emerald-500 text-lg"></i></div>
-                                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-lg focus:bg-white focus:border-emerald-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Barcode...">
+                                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-base md:text-lg focus:bg-white focus:border-emerald-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Barcode...">
                                 </div>
                             </div>
                             <p class="text-xs text-slate-400 text-center italic">Scanning a book will instantly return it.</p>
@@ -183,26 +196,26 @@
 
             <div id="myaccount" class="page-section hidden fade-enter max-w-3xl mx-auto pt-4">
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-8 border-b border-slate-100 bg-slate-50/50">
+                    <div class="p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
                         <h3 class="text-xl font-bold text-slate-900">Member Portal</h3>
                         <p class="text-slate-500 text-sm">View your history and manage account settings</p>
                     </div>
-                    <div class="p-8">
-                        <div id="authStep1" class="flex gap-3">
-                            <input type="email" id="authEmail" class="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl input-focus" placeholder="Enter your email address...">
+                    <div class="p-6 md:p-8">
+                        <div id="authStep1" class="flex flex-col md:flex-row gap-3">
+                            <input type="email" id="authEmail" class="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-sm input-focus" placeholder="Enter your email address...">
                             <button onclick="checkUserStatus()" class="px-8 py-4 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200">Next</button>
                         </div>
                         <div id="authStep2" class="hidden mt-6 space-y-4 animate-slideUpFade">
                             <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
                                 <p id="authMessage" class="text-sm font-medium text-slate-600 mb-4">Verify Identity</p>
                                 <div id="authNameField" class="hidden mb-3">
-                                    <input type="text" id="authNameInput" class="block w-full p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Full Name">
+                                    <input type="text" id="authNameInput" class="block w-full p-3.5 border border-slate-200 rounded-xl text-base md:text-sm" placeholder="Full Name">
                                 </div>
                                 <div id="authIdField" class="hidden mb-3">
-                                    <input type="text" id="authIdInput" class="block w-full p-3.5 border border-slate-200 rounded-xl font-mono text-sm" placeholder="Scan ID Card (Optional)">
+                                    <input type="text" id="authIdInput" class="block w-full p-3.5 border border-slate-200 rounded-xl font-mono text-base md:text-sm" placeholder="Scan ID Card (Optional)">
                                 </div>
-                                <div class="flex gap-3">
-                                    <input type="password" id="authPassword" class="flex-1 p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Password" autocomplete="new-password">
+                                <div class="flex flex-col md:flex-row gap-3">
+                                    <input type="password" id="authPassword" class="flex-1 p-3.5 border border-slate-200 rounded-xl text-base md:text-sm" placeholder="Password" autocomplete="new-password">
                                     <button id="authBtnAction" class="px-6 py-3.5 bg-library-600 text-white font-bold rounded-xl hover:bg-library-700 shadow-md">Login</button>
                                 </div>
                             </div>
@@ -214,17 +227,18 @@
                             <h4 class="font-bold text-indigo-100 uppercase tracking-widest text-xs mb-2">Active Loans</h4>
                             <ul id="myActiveList" class="space-y-2 relative z-10 text-lg font-medium"></ul>
                             <div class="mt-6 pt-4 border-t border-indigo-800 flex gap-3 relative z-10">
-                                <button onclick="openCollateralModal()" class="px-4 py-2 bg-indigo-800/50 hover:bg-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wide border border-indigo-700 transition-colors flex items-center gap-2"><i class="ph-fill ph-credit-card"></i> Collateral</button>
                                 <button onclick="openLinkIDModal()" class="px-4 py-2 bg-indigo-800/50 hover:bg-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wide border border-indigo-700 transition-colors flex items-center gap-2"><i class="ph-fill ph-identification-card"></i> Link ID</button>
                             </div>
                         </div>
-                        <div class="px-8 pb-8">
+                        <div class="px-6 md:px-8 pb-8">
                             <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-bold ph-clock-counter-clockwise"></i> History Log</h4>
                             <div class="overflow-hidden rounded-xl border border-slate-100">
-                                <table class="w-full text-sm text-left">
-                                    <thead class="bg-slate-50 text-xs text-slate-400 uppercase font-bold"><tr><th class="p-3 pl-4">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead>
-                                    <tbody id="myHistoryTable" class="divide-y divide-slate-50 bg-white"></tbody>
-                                </table>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left min-w-[300px]">
+                                        <thead class="bg-slate-50 text-xs text-slate-400 uppercase font-bold"><tr><th class="p-3 pl-4">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead>
+                                        <tbody id="myHistoryTable" class="divide-y divide-slate-50 bg-white"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -234,9 +248,9 @@
             <div id="admin" class="page-section hidden fade-enter max-w-[90rem] mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
                     <div><h3 class="text-2xl font-bold text-slate-800">Admin Dashboard</h3><p class="text-slate-500">System Overview & Alerts</p></div>
-                    <div class="flex gap-2">
-                        <button onclick="reloadCatalog()" class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Refresh Data</button>
-                        <button onclick="logoutAdmin()" class="px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-sm font-bold hover:bg-rose-100 transition-colors">Logout</button>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="reloadCatalog()" class="flex-1 md:flex-none px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Refresh</button>
+                        <button onclick="logoutAdmin()" class="flex-1 md:flex-none px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-sm font-bold hover:bg-rose-100 transition-colors">Logout</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -257,8 +271,8 @@
                     <div class="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                         <div class="p-6 border-b border-slate-100 flex justify-between items-center"><h4 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-hourglass-medium text-orange-500"></i> Active Loans</h4></div>
                         <div class="overflow-x-auto flex-1">
-                            <table class="w-full text-sm">
-                                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold"><tr><th class="p-4 text-left">Student</th><th class="p-4 text-left">Collateral</th><th class="p-4 text-left">Book</th><th class="p-4 text-left">Due Status</th></tr></thead>
+                            <table class="w-full text-sm min-w-[500px]">
+                                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold"><tr><th class="p-4 text-left">Student</th><th class="p-4 text-left">Book</th><th class="p-4 text-left">Due Status</th></tr></thead>
                                 <tbody id="adminActiveTable" class="divide-y divide-slate-50"></tbody>
                             </table>
                         </div>
@@ -277,7 +291,7 @@
         </div>
     </main>
 
-    <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter">
+    <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
         <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center">
             <div class="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-bold ph-lock-key text-xl"></i></div>
             <h3 class="text-xl font-bold mb-6">Restricted Access</h3>
@@ -288,25 +302,7 @@
         </div>
     </div>
 
-    <div id="collateralModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-600 to-indigo-600"></div>
-            <button onclick="document.getElementById('collateralModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
-            <h3 class="text-xl font-bold text-center mb-1">Secure Collateral</h3>
-            <div class="flex items-center justify-center gap-2 text-xs text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full w-fit mx-auto mb-6 font-medium"><i class="ph-fill ph-lock-key"></i> AES-256 Encrypted</div>
-            <div class="space-y-3">
-                <input type="text" id="ccName" class="block w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm input-focus" placeholder="Name on Card" autocomplete="off">
-                <input type="text" id="ccNumber" class="block w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono input-focus" placeholder="Card Number" autocomplete="off">
-                <div class="flex gap-3">
-                    <input type="text" id="ccExp" class="flex-1 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center input-focus" placeholder="MM/YY" autocomplete="off">
-                    <input type="text" id="ccCvv" class="w-24 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center input-focus" placeholder="CVV" autocomplete="off">
-                </div>
-                <button onclick="submitCollateral()" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl mt-2 hover:bg-black shadow-lg">Encrypt & Save</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="linkIDModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter">
+    <div id="linkIDModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
         <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm relative text-center">
             <button onclick="document.getElementById('linkIDModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
             <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-identification-card text-3xl"></i></div>
@@ -316,39 +312,47 @@
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
-        <div id="toastIcon" class="text-emerald-400"><i class="ph-fill ph-check-circle text-xl"></i></div>
-        <p id="toastMessage" class="font-medium text-sm">Notification</p>
+    <div id="toast" class="fixed bottom-6 right-6 left-6 md:left-auto bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <div id="toastIcon" class="text-emerald-400 shrink-0"><i class="ph-fill ph-check-circle text-xl"></i></div>
+        <p id="toastMessage" class="font-medium text-sm truncate">Notification</p>
     </div>
 
     <script>
         let allBooks = [], activeStudents = [], adminPassword = "";
         let checkoutCart = []; 
 
+        // --- MOBILE SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            if (sidebar.classList.contains('drawer-closed')) {
+                sidebar.classList.remove('drawer-closed');
+                sidebar.classList.add('drawer-open');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.remove('drawer-open');
+                sidebar.classList.add('drawer-closed');
+                overlay.classList.add('hidden');
+            }
+        }
+
         function safe(str) {
             if(!str) return '';
-            // Decode HTML entities (like &#039;) first using a textarea hack
             const txt = document.createElement('textarea');
             txt.innerHTML = str;
             const decoded = txt.value;
-            // Then re-sanitize
             const div = document.createElement('div');
             div.textContent = decoded;
             return div.innerHTML;
         }
 
-        // --- NEW FUNCTION: Groups books by Title ---
         function groupBooks(list) {
             const groups = {};
             list.forEach(b => {
-                // Normalize key: trim whitespace and lowercase to group accurately
                 const key = b.name.trim().toLowerCase(); 
                 if (!groups[key]) {
-                    groups[key] = {
-                        ...b,
-                        _ids: [b.id], // track all IDs
-                        _totalAvailable: parseInt(b.available) || 0
-                    };
+                    groups[key] = { ...b, _ids: [b.id], _totalAvailable: parseInt(b.available) || 0 };
                 } else {
                     groups[key]._ids.push(b.id);
                     groups[key]._totalAvailable += (parseInt(b.available) || 0);
@@ -358,6 +362,10 @@
         }
 
         function showPage(pageId, btn) {
+            // Close sidebar on mobile when navigating
+            const sidebar = document.getElementById('mainSidebar');
+            if(window.innerWidth < 768 && sidebar.classList.contains('drawer-open')) toggleSidebar();
+
             document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('bg-library-50', 'text-library-700'); el.classList.add('text-slate-500'); });
             if(btn) { btn.classList.remove('text-slate-500'); btn.classList.add('bg-library-50', 'text-library-700'); }
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
@@ -391,14 +399,12 @@
                 const res = await fetch('api.php?action=books');
                 allBooks = await res.json();
                 renderTable(allBooks);
-                document.getElementById('statTotal').innerText = allBooks.length; // This counts total copies
+                document.getElementById('statTotal').innerText = allBooks.length; 
             } catch(e) { console.error(e); }
         }
 
         function renderTable(books) {
-            // Apply grouping before rendering
             const groupedBooks = groupBooks(books);
-
             const tbody = document.getElementById('bookTable');
             const emptyState = document.getElementById('emptyCatalogState');
             
@@ -409,12 +415,10 @@
                 const availableCount = b._totalAvailable;
                 const available = availableCount > 0;
                 
-                // Badge Logic
                 const statusBadge = available 
                     ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available (${availableCount})</span>` 
                     : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">Out of Stock</span>`;
                 
-                // ID Display Logic
                 let idDisplay = safe(b._ids[0]);
                 if (b._ids.length > 1) {
                     idDisplay += ` <span class="text-[10px] bg-slate-100 text-slate-500 px-1 rounded ml-1">+${b._ids.length - 1}</span>`;
@@ -436,7 +440,6 @@
 
         function filterCatalog() {
             const term = document.getElementById('searchBox').value.toLowerCase();
-            // We filter the RAW list first, so you can still search by specific barcode
             const filteredRaw = allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term));
             renderTable(filteredRaw);
         }
@@ -591,7 +594,6 @@
             else { msg.className = 'text-xs font-bold text-center h-4 text-rose-500'; msg.innerHTML = `User not found`; }
         }
 
-        function openCollateralModal() { document.getElementById('collateralModal').classList.remove('hidden'); }
         function openLinkIDModal() { document.getElementById('linkIDModal').classList.remove('hidden'); setTimeout(() => document.getElementById('linkIDInput').focus(), 100); }
 
         async function handleLinkID(event) {
@@ -602,22 +604,6 @@
             const res = await fetch('api.php?action=link_student_id', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, student_id: sid }) });
             if(res.ok) { showToast("ID Linked Successfully"); document.getElementById('linkIDModal').classList.add('hidden'); event.target.value = ''; } 
             else { showToast("Failed to link ID", 'error'); }
-        }
-
-        async function submitCollateral() {
-            const email = document.getElementById('authEmail').value; 
-            const card = { name: document.getElementById('ccName').value, number: document.getElementById('ccNumber').value, exp: document.getElementById('ccExp').value, cvv: document.getElementById('ccCvv').value };
-            if(!card.number || !card.exp || !card.cvv) return showToast("Details missing", 'error');
-            const res = await fetch('api.php?action=save_collateral', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email: email, cardData: JSON.stringify(card) }) });
-            if(res.ok) { showToast("Saved Securely"); document.getElementById('collateralModal').classList.add('hidden'); document.getElementById('ccNumber').value = ''; document.getElementById('ccCvv').value = ''; } 
-            else { showToast("Save Failed", 'error'); }
-        }
-
-        async function checkCollateral(email) {
-            const res = await fetch('api.php?action=get_collateral', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email: email, password: adminPassword }) });
-            const data = await res.json();
-            if(data.found) { const d = JSON.parse(data.details); alert(`Name: ${d.name}\nCard: ${d.number}\nExp: ${d.exp}\nCVV: ${d.cvv}`); } 
-            else { alert("No card on file."); }
         }
         
         function inspectUser(email) { showPage('myaccount'); document.getElementById('authEmail').value = email; performLogin(email, adminPassword); showToast("Inspecting " + email); }
@@ -650,9 +636,8 @@
                 tbody.innerHTML = loans.map(l => {
                     const statusClass = l.isOverdue ? 'bg-rose-50/50' : '';
                     const dayLabel = l.isOverdue ? `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-md"><i class="ph-bold ph-warning"></i> +${Math.abs(l.daysLeft)} Days</span>` : `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">${l.daysLeft} Days left</span>`;
-                    const cardIcon = l.hasCollateral ? `<button onclick="checkCollateral('${safe(l.email)}')" class="text-purple-600 hover:text-purple-800 transition-colors" title="View Collateral"><i class="ph-fill ph-credit-card text-xl"></i></button>` : `<span class="text-slate-200" title="No Collateral"><i class="ph-fill ph-credit-card text-xl"></i></span>`;
                     const identifier = l.email ? l.email : l.student;
-                    return `<tr class="${statusClass} border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"><td class="p-4"><button onclick="inspectUser('${safe(identifier)}')" class="text-library-600 hover:text-library-800 font-bold text-sm text-left hover:underline block">${safe(l.student)}</button><span class="text-[10px] text-slate-400">${safe(l.email)}</span></td><td class="p-4 pl-8">${cardIcon}</td><td class="p-4 text-sm text-slate-700 font-medium">${safe(l.book)}</td><td class="p-4">${dayLabel}</td></tr>`;
+                    return `<tr class="${statusClass} border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"><td class="p-4"><button onclick="inspectUser('${safe(identifier)}')" class="text-library-600 hover:text-library-800 font-bold text-sm text-left hover:underline block">${safe(l.student)}</button><span class="text-[10px] text-slate-400">${safe(l.email)}</span></td><td class="p-4 text-sm text-slate-700 font-medium">${safe(l.book)}</td><td class="p-4">${dayLabel}</td></tr>`;
                 }).join('');
             }
         }
