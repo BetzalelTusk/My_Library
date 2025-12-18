@@ -24,7 +24,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 function sanitize_input($data) {
     if (is_array($data)) return array_map('sanitize_input', $data);
     $data = trim($data);
-    // CRITICAL FIX: Changed from strip_tags to htmlspecialchars to preserve <emails>
+    // Preserves <emails> but encodes quotes for security
     $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
     // Prevent Excel Injection
     if (in_array(substr($data, 0, 1), ['=', '+', '-', '@'])) $data = "'" . $data;
@@ -48,12 +48,12 @@ function read_transactions_safe($filename) {
         fgetcsv($handle); 
         while (($data = fgetcsv($handle)) !== FALSE) {
             if(count($data) >= 4) {
-                // We decode entities when reading back so logic works (e.g. < becomes < again)
+                // BUG FIX: Added ENT_QUOTES to decode single quotes (apostrophes) correctly
                 $rows[] = [
-                    'Student' => htmlspecialchars_decode($data[0] ?? 'Unknown'), 
-                    'Book' => htmlspecialchars_decode($data[1] ?? 'Unknown'), 
-                    'Action' => htmlspecialchars_decode($data[2] ?? '-'), 
-                    'Date' => htmlspecialchars_decode($data[3] ?? '')
+                    'Student' => htmlspecialchars_decode($data[0] ?? 'Unknown', ENT_QUOTES), 
+                    'Book' => htmlspecialchars_decode($data[1] ?? 'Unknown', ENT_QUOTES), 
+                    'Action' => htmlspecialchars_decode($data[2] ?? '-', ENT_QUOTES), 
+                    'Date' => htmlspecialchars_decode($data[3] ?? '', ENT_QUOTES)
                 ];
             }
         }
@@ -102,8 +102,8 @@ try {
 
         $catalog = [];
         foreach ($books_raw as $b) {
-            // Decode name for matching against transactions
-            $realName = htmlspecialchars_decode($b['name']);
+            // BUG FIX: Added ENT_QUOTES to ensure matching works if book title has apostrophe
+            $realName = htmlspecialchars_decode($b['name'], ENT_QUOTES);
             $activeLoans = $loans[$realName] ?? 0;
             $b['available'] = max(0, $b['copies'] - $activeLoans);
             $b['total'] = $b['copies'];
@@ -229,6 +229,8 @@ try {
         if(filter_var($email, FILTER_VALIDATE_EMAIL) && isset($users[$email])) {
              $userData = $users[$email];
              $realName = is_array($userData) ? ($userData['name'] ?? 'Unknown') : 'Student';
+             // BUG FIX: Decode the name from storage BEFORE adding it to string to prevent double encoding
+             $realName = htmlspecialchars_decode($realName, ENT_QUOTES);
              $student = "$realName <$email>"; 
         } else {
              $student = $rawStudentInput;
@@ -240,8 +242,12 @@ try {
         $safeAct = sanitize_input($act);
         $safeDate = sanitize_input($date);
 
-        $line = "\"$safeStudent\",\"$safeBook\",\"$safeAct\",\"$safeDate\"\n";
-        file_put_contents($trans_csv, $line, FILE_APPEND);
+        // BUG FIX: Use fputcsv for safe writing instead of manual concatenation
+        $handle = fopen($trans_csv, 'a');
+        if ($handle !== FALSE) {
+            fputcsv($handle, [$safeStudent, $safeBook, $safeAct, $safeDate]);
+            fclose($handle);
+        }
 
         if (!empty($n8n_webhook)) {
             $dueDate = date('Y-m-d', strtotime($date . ' + 14 days')); 
