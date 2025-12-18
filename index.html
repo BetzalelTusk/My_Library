@@ -3,348 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LibraryOS</title>
+    <title>LibraryOS // N-Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <script>
         tailwind.config = {
             theme: { 
                 extend: { 
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: { 
+                        matrix: ['DotGothic16', 'sans-serif'],
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
                     colors: {
-                        library: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+                        sys: { black: '#0a0a0a', dark: '#171717', mid: '#525252', light: '#e5e5e5', white: '#ffffff' },
+                        alert: '#D71921' 
+                    },
+                    backgroundImage: {
+                        'noise': "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyNlNWU1ZTUnLz4KPC9zdmc+')"
                     }
                 } 
             }
         }
     </script>
     <style>
-        body { background-color: #f8fafc; }
-        .fade-enter { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-overlay { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        body { background-color: #f5f5f5; font-family: 'Space Grotesk', sans-serif; color: #0a0a0a; }
+        .bg-grid { background-size: 20px 20px; background-image: radial-gradient(circle, #d4d4d4 1.5px, transparent 1.5px); }
+        .page-enter { animation: glitchFade 0.3s ease-out forwards; opacity: 0; }
+        @keyframes glitchFade { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        .input-focus { @apply focus:ring-4 focus:ring-library-100 focus:border-library-500 transition-all duration-200; }
+        ::-webkit-scrollbar-thumb { background: #000; }
+        ::-webkit-scrollbar-thumb:hover { background: #D71921; }
+        .nav-active { background-color: #0a0a0a; color: #ffffff; }
+        .blink-dot { animation: blink 2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         
-        /* Mobile Drawer Transition */
-        .drawer { transition: transform 0.3s ease-in-out; }
-        .drawer-open { transform: translateX(0); }
-        .drawer-closed { transform: translateX(-100%); }
+        /* Interactive Card States */
+        .card-base { transition: all 0.2s; }
+        .card-base:hover { border-color: #000; }
+        
+        /* Selected State (In Cart) */
+        .card-selected { background-color: #0a0a0a; color: #ffffff; border-color: #0a0a0a; }
+        .card-selected .text-sys-mid { color: #a3a3a3; }
+        .card-selected .status-text { color: #ffffff; }
+        .card-selected .bg-num { color: rgba(255,255,255,0.1); }
+        
+        .glass-overlay { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex overflow-hidden font-sans antialiased selection:bg-library-100 selection:text-library-900">
+<body class="h-screen w-screen overflow-hidden flex relative bg-grid">
 
-    <div id="mobileOverlay" onclick="toggleSidebar()" class="fixed inset-0 glass-overlay z-40 hidden md:hidden fade-enter"></div>
-
-    <aside id="mainSidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 flex flex-col justify-between drawer drawer-closed md:relative md:translate-x-0 shadow-2xl md:shadow-none">
-        <div>
-            <div class="h-16 md:h-24 flex items-center px-6 md:px-8 border-b border-slate-50 justify-between md:justify-start">
-                <div class="flex items-center gap-3 text-library-600">
-                    <div class="bg-library-50 p-2 rounded-xl">
-                        <i class="ph-fill ph-books text-2xl"></i>
-                    </div>
-                    <span class="font-bold text-xl tracking-tight text-slate-900">LibraryOS</span>
-                </div>
-                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 p-2"><i class="ph-bold ph-x text-xl"></i></button>
-            </div>
-
-            <nav class="p-4 md:p-6 space-y-2">
-                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Main Menu</div>
-                <button onclick="showPage('catalog', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl bg-library-50 text-library-700 transition-all duration-200 group">
-                    <i class="ph ph-book-open text-xl group-hover:scale-110 transition-transform"></i> Catalogue
-                </button>
-                <button onclick="showPage('borrow', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-                    <i class="ph ph-upload-simple text-xl group-hover:scale-110 transition-transform"></i> Check Out
-                </button>
-                <button onclick="showPage('return', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 group">
-                    <i class="ph ph-download-simple text-xl group-hover:scale-110 transition-transform"></i> Check In
-                </button>
-                <div class="pt-6 mt-4 border-t border-slate-50">
-                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Personal</div>
-                    <button onclick="showPage('myaccount', this)" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-200 group">
-                        <i class="ph ph-user-circle text-xl group-hover:scale-110 transition-transform"></i> My History
-                    </button>
-                </div>
-            </nav>
+    <aside class="hidden md:flex flex-col w-24 h-screen z-20 items-center py-6 relative bg-white/50 backdrop-blur-sm border-r border-sys-light/50">
+        <div class="mb-12 flex flex-col items-center gap-1">
+            <i class="ph-fill ph-circles-four text-3xl text-sys-black"></i>
+            <span class="font-matrix text-[10px] tracking-widest text-sys-mid">LOS</span>
         </div>
-        <div class="p-6 border-t border-slate-50">
-            <button onclick="checkAdmin()" class="nav-item w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group">
-                <i class="ph ph-lock-key text-xl group-hover:scale-110 transition-transform"></i> Admin Panel
+        <nav class="flex-1 flex flex-col gap-4 w-full px-3">
+            <button onclick="showPage('catalog', this)" id="nav-catalog" class="nav-item group w-full aspect-square rounded-2xl flex items-center justify-center border border-transparent hover:border-sys-black transition-all duration-200 nav-active">
+                <i class="ph ph-book-open text-2xl"></i>
+            </button>
+            
+            <button onclick="showPage('borrow', this)" id="nav-borrow" class="nav-item group w-full aspect-square rounded-2xl flex flex-col items-center justify-center text-sys-mid border border-transparent hover:border-sys-black transition-all duration-200 relative">
+                <i class="ph ph-arrow-up-right text-2xl"></i>
+                <span id="badge-borrow" class="hidden absolute top-2 right-2 w-2 h-2 bg-alert rounded-full"></span>
+            </button>
+
+            <button onclick="showPage('return', this)" id="nav-return" class="nav-item group w-full aspect-square rounded-2xl flex items-center justify-center text-sys-mid border border-transparent hover:border-sys-black transition-all duration-200">
+                <i class="ph ph-arrow-down-left text-2xl"></i>
+            </button>
+            <div class="w-4 h-[1px] bg-sys-light mx-auto my-2"></div>
+            <button onclick="showPage('myaccount', this)" id="nav-account" class="nav-item group w-full aspect-square rounded-2xl flex items-center justify-center text-sys-mid border border-transparent hover:border-sys-black transition-all duration-200">
+                <i class="ph ph-fingerprint text-2xl"></i>
+            </button>
+        </nav>
+        <div class="mt-auto">
+             <button onclick="checkAdmin()" class="w-10 h-10 rounded-full border border-sys-light hover:border-alert hover:text-alert flex items-center justify-center transition-colors">
+                <i class="ph-bold ph-terminal-window text-lg"></i>
             </button>
         </div>
     </aside>
 
-    <div class="md:hidden fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 z-30 px-4 h-16 flex items-center justify-between shadow-sm">
-        <span class="font-bold text-lg text-library-600 flex items-center gap-2"><i class="ph-fill ph-books"></i> LibraryOS</span>
-        <button onclick="toggleSidebar()" class="p-2 rounded-lg bg-slate-50 text-slate-600 active:bg-slate-200">
-            <i class="ph ph-list text-2xl"></i>
+    <div class="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-sys-black text-white rounded-full z-50 flex justify-around items-center px-2 shadow-2xl">
+        <button onclick="showPage('catalog', this)" class="nav-item-mobile p-3 rounded-full bg-sys-mid/30 text-white"><i class="ph-fill ph-book-open text-xl"></i></button>
+        
+        <button onclick="showPage('borrow', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-white relative">
+            <i class="ph-bold ph-arrow-up-right text-xl"></i>
+            <span id="badge-borrow-mobile" class="hidden absolute top-2 right-2 w-2 h-2 bg-alert rounded-full border border-sys-black"></span>
         </button>
+
+        <div class="w-[1px] h-4 bg-sys-mid"></div>
+        <button onclick="showPage('return', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-white"><i class="ph-bold ph-arrow-down-left text-xl"></i></button>
+        <button onclick="showPage('myaccount', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-white"><i class="ph-bold ph-fingerprint text-xl"></i></button>
     </div>
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative pt-16 md:pt-0 bg-[#f8fafc]">
-        <header class="h-auto py-6 md:py-0 md:h-24 flex items-center justify-between px-6 md:px-12 shrink-0">
-            <div>
-                <h2 id="pageTitle" class="text-2xl font-bold text-slate-800 tracking-tight">Catalogue</h2>
-                <p id="pageSubtitle" class="text-sm text-slate-500 font-medium mt-1">Manage library inventory</p>
-            </div>
-            <div class="hidden sm:flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
-                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <p class="text-xs font-bold text-slate-600 uppercase tracking-wide">System Online</p>
+    <main class="flex-1 relative z-10 h-full overflow-hidden flex flex-col">
+        <header class="h-24 md:h-32 flex items-end pb-4 px-6 md:px-12 shrink-0">
+            <div class="flex justify-between items-end w-full border-b-2 border-sys-black pb-4">
+                <div>
+                    <h1 id="pageTitle" class="font-matrix text-4xl md:text-6xl text-sys-black uppercase leading-none tracking-tight">CATALOG</h1>
+                    <div class="flex items-center gap-3 mt-2">
+                        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-sys-black text-white text-[10px] font-mono rounded-sm">
+                            <div class="w-1.5 h-1.5 bg-alert rounded-full blink-dot"></div><span>SYS.ONLINE</span>
+                        </div>
+                        <p id="pageSubtitle" class="font-mono text-xs uppercase text-sys-mid tracking-widest">Index // v2.0</p>
+                    </div>
+                </div>
+                <button onclick="checkAdmin()" class="md:hidden p-2 text-sys-black"><i class="ph-bold ph-terminal-window text-2xl"></i></button>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-4 md:px-12 pb-12">
+        <div id="contentArea" class="flex-1 overflow-y-auto px-4 md:px-12 pb-24 md:pb-12 pt-6">
             
-            <div id="catalog" class="page-section fade-enter max-w-7xl mx-auto">
-                <div class="relative group mb-6 md:mb-8 shadow-sm">
-                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                        <i class="ph ph-magnifying-glass text-slate-400 text-xl group-focus-within:text-library-500 transition-colors"></i>
-                    </div>
-                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full pl-14 pr-4 py-4 md:py-5 bg-white border border-slate-200 rounded-2xl text-base md:text-lg shadow-sm input-focus placeholder-slate-400" placeholder="Search title, author, or scan...">
+            <div id="catalog" class="page-section page-enter">
+                <div class="mb-8 relative group">
+                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full bg-transparent border-b border-sys-mid/30 text-2xl md:text-3xl font-matrix py-4 focus:border-sys-black outline-none placeholder-sys-light uppercase transition-colors" placeholder="[ ENTER_QUERY_ ]">
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 text-sys-mid/50 text-xs font-mono">[ SEARCH_INDEX ]</div>
                 </div>
-                <div class="bg-white rounded-3xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] border border-slate-100 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[600px]">
-                            <thead class="bg-slate-50 text-xs font-bold uppercase text-slate-500 tracking-wider">
-                                <tr>
-                                    <th class="p-5 border-b border-slate-100 w-32">ID</th>
-                                    <th class="p-5 border-b border-slate-100">Title & Details</th>
-                                    <th class="p-5 border-b border-slate-100">Category</th>
-                                    <th class="p-5 border-b border-slate-100 text-right">Availability</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bookTable" class="divide-y divide-slate-50 text-sm"></tbody>
-                        </table>
-                    </div>
-                    <div id="emptyCatalogState" class="hidden p-12 text-center">
-                        <div class="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                            <i class="ph ph-books text-3xl"></i>
+                <div id="bookGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+                <div id="emptyCatalogState" class="hidden text-center py-20 font-mono text-sys-mid">// NO_DATA_FOUND</div>
+            </div>
+
+            <div id="borrow" class="page-section hidden page-enter max-w-2xl mx-auto">
+                <div class="border border-sys-black p-1 bg-white">
+                    <div class="bg-sys-black text-white p-2 font-mono text-xs flex justify-between"><span>// OUTBOUND_MANIFEST</span><span id="cartCount">ITEMS: 0</span></div>
+                    <div class="p-6 md:p-8 space-y-8">
+                        <div>
+                            <label class="font-mono text-[10px] text-sys-mid uppercase tracking-widest mb-2 block">01. TARGET_IDENTITY</label>
+                            <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-sm focus:border-sys-black outline-none" placeholder="USER_EMAIL_OR_ID">
+                            <div id="borrowIdentityMsg" class="h-4 mt-2 font-mono text-xs text-right text-sys-mid">WAITING_FOR_INPUT...</div>
                         </div>
-                        <h3 class="text-slate-900 font-bold text-lg">No books found</h3>
+                        <div>
+                            <label class="font-mono text-[10px] text-sys-mid uppercase tracking-widest mb-2 block">02. ITEM_SCAN</label>
+                            <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-sm focus:border-sys-black outline-none" placeholder="SCAN_BARCODE_HERE">
+                        </div>
+                        <div class="border-t border-b border-dashed border-sys-mid/30 py-4 min-h-[100px]">
+                            <ul id="cartList" class="space-y-2 font-mono text-sm"></ul>
+                            <div id="emptyCartMsg" class="text-center text-sys-mid/50 text-xs py-4">// MANIFEST_EMPTY</div>
+                        </div>
+                        <button onclick="processCheckout()" class="w-full bg-sys-black text-white py-4 font-matrix text-lg hover:bg-alert transition-colors"><span id="checkoutBtnText">INITIATE_TRANSFER</span></button>
                     </div>
                 </div>
             </div>
 
-            <div id="borrow" class="page-section hidden fade-enter min-h-full flex flex-col items-center pt-4 md:pt-8 pb-20">
-                <div class="w-full max-w-lg">
-                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-library-500 to-indigo-400"></div>
-                        <div class="text-center mb-8">
-                            <div class="w-16 h-16 bg-library-50 text-library-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-shopping-cart text-3xl"></i></div>
-                            <h2 class="text-2xl font-bold text-slate-800">Check Out Cart</h2>
-                            <p class="text-slate-500 text-sm">Scan user, then scan books to add to cart</p>
-                        </div>
-                        
-                        <div class="space-y-5">
-                            <div>
-                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">1. Identify User</label>
-                                <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full p-4 md:p-3 bg-white border border-slate-200 rounded-xl text-base md:text-sm input-focus mb-1" placeholder="Scan Student ID or Type Email">
-                                <p id="borrowIdentityMsg" class="text-xs font-bold text-center h-4"></p>
-                            </div>
-
-                            <div class="relative">
-                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">2. Scan Books</label>
-                                <div class="relative group">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="ph-bold ph-scan text-library-500 text-lg"></i></div>
-                                    <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-base md:text-lg focus:bg-white focus:border-library-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Books...">
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 rounded-2xl border border-slate-100 p-4 max-h-40 overflow-y-auto">
-                                <p id="emptyCartMsg" class="text-center text-xs text-slate-400 italic py-2">Cart is empty. Scan books to add.</p>
-                                <ul id="cartList" class="space-y-2 text-sm"></ul>
-                            </div>
-
-                            <button onclick="processCheckout()" class="w-full py-4 bg-library-600 hover:bg-library-700 text-white font-bold rounded-2xl shadow-lg shadow-library-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-                                <span id="checkoutBtnText">Complete Checkout</span>
-                                <i class="ph-bold ph-arrow-right"></i>
-                            </button>
-                        </div>
-                    </div>
+            <div id="return" class="page-section hidden page-enter max-w-2xl mx-auto">
+                <div class="border border-sys-black p-6 md:p-10 bg-white text-center">
+                    <i class="ph-bold ph-arrow-down-left text-4xl mb-4 text-sys-mid"></i>
+                    <h2 class="font-matrix text-2xl uppercase mb-6">INBOUND_PROCESSING</h2>
+                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full bg-sys-light/30 border-2 border-sys-black p-4 font-mono text-center text-xl focus:bg-white outline-none mb-4" placeholder="[ SCAN_TO_RETURN ]">
+                    <p class="font-mono text-xs text-sys-mid">// AUTO_COMMIT_ON_SCAN</p>
                 </div>
             </div>
 
-            <div id="return" class="page-section hidden fade-enter min-h-full flex flex-col items-center pt-4 md:pt-8 pb-20">
-                <div class="w-full max-w-lg">
-                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
-                        <div class="text-center mb-8">
-                            <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-download-simple text-3xl"></i></div>
-                            <h2 class="text-2xl font-bold text-slate-800">Check In</h2>
-                            <p class="text-slate-500 text-sm">Return items to the inventory</p>
-                        </div>
-                        <div class="space-y-5">
-                            <div class="relative">
-                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-widest ml-1 mb-1 block">Quick Scan</label>
-                                <div class="relative group">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="ph-bold ph-scan text-emerald-500 text-lg"></i></div>
-                                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-mono tracking-widest text-base md:text-lg focus:bg-white focus:border-emerald-500 focus:ring-0 transition-all placeholder-slate-400" placeholder="Scan Barcode...">
-                                </div>
+            <div id="myaccount" class="hidden page-section page-enter max-w-3xl mx-auto">
+                <div class="bg-white border border-sys-black p-1">
+                    <div class="bg-sys-light p-2 font-mono text-xs text-sys-mid flex justify-between"><span>// USER_DOSSIER</span><span>SECURE_CONN</span></div>
+                    <div id="authContainer" class="p-8 md:p-12 text-center">
+                        <i class="ph-bold ph-fingerprint text-4xl mb-6 text-sys-black"></i>
+                        <div class="space-y-4 max-w-sm mx-auto">
+                            <input type="email" id="authEmail" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none placeholder-sys-mid" placeholder="ENTER_IDENTITY_KEY">
+                            <div id="authStep2" class="hidden space-y-4">
+                                <p id="authMessage" class="font-mono text-xs text-sys-mid">VERIFY_CREDENTIALS...</p>
+                                <input type="text" id="authNameInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="FULL_NAME">
+                                <input type="text" id="authIdInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="SCAN_ID_CARD">
+                                <input type="password" id="authPassword" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="PASSWORD">
                             </div>
-                            <p class="text-xs text-slate-400 text-center italic">Scanning a book will instantly return it.</p>
+                            <button id="authBtnAction" onclick="checkUserStatus()" class="w-full bg-sys-black text-white py-4 font-matrix text-lg hover:bg-alert transition-colors">AUTHENTICATE</button>
+                        </div>
+                    </div>
+                    <div id="myHistoryResults" class="hidden p-6 md:p-8">
+                        <div class="flex items-center justify-between mb-8 border-b border-sys-black pb-4">
+                            <div><h2 id="userNameDisplay" class="font-matrix text-2xl uppercase">UNKNOWN_USER</h2><p class="font-mono text-xs text-sys-mid">ACCESS_LEVEL: STUDENT</p></div>
+                            <button onclick="openLinkIDModal()" class="text-xs font-mono border border-sys-mid px-3 py-1 hover:bg-sys-black hover:text-white transition-colors">[ LINK_PHYSICAL_ID ]</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div><h3 class="font-mono text-xs text-sys-mid uppercase mb-4">// ACTIVE_ASSETS</h3><ul id="myActiveList" class="space-y-2 font-mono text-sm border-l-2 border-sys-black pl-4"></ul></div>
+                            <div><h3 class="font-mono text-xs text-sys-mid uppercase mb-4">// TRANSACTION_LOG</h3><div class="h-64 overflow-y-auto pr-2"><table class="w-full font-mono text-xs text-left"><tbody id="myHistoryTable" class="divide-y divide-sys-light/50"></tbody></table></div></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="myaccount" class="page-section hidden fade-enter max-w-3xl mx-auto pt-4">
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
-                        <h3 class="text-xl font-bold text-slate-900">Member Portal</h3>
-                        <p class="text-slate-500 text-sm">View your history and manage account settings</p>
-                    </div>
-                    <div class="p-6 md:p-8">
-                        <div id="authStep1" class="flex flex-col md:flex-row gap-3">
-                            <input type="email" id="authEmail" class="flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-base md:text-sm input-focus" placeholder="Enter your email address...">
-                            <button onclick="checkUserStatus()" class="px-8 py-4 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-200">Next</button>
-                        </div>
-                        <div id="authStep2" class="hidden mt-6 space-y-4 animate-slideUpFade">
-                            <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                                <p id="authMessage" class="text-sm font-medium text-slate-600 mb-4">Verify Identity</p>
-                                <div id="authNameField" class="hidden mb-3">
-                                    <input type="text" id="authNameInput" class="block w-full p-3.5 border border-slate-200 rounded-xl text-base md:text-sm" placeholder="Full Name">
-                                </div>
-                                <div id="authIdField" class="hidden mb-3">
-                                    <input type="text" id="authIdInput" class="block w-full p-3.5 border border-slate-200 rounded-xl font-mono text-base md:text-sm" placeholder="Scan ID Card (Optional)">
-                                </div>
-                                <div class="flex flex-col md:flex-row gap-3">
-                                    <input type="password" id="authPassword" class="flex-1 p-3.5 border border-slate-200 rounded-xl text-base md:text-sm" placeholder="Password" autocomplete="new-password">
-                                    <button id="authBtnAction" class="px-6 py-3.5 bg-library-600 text-white font-bold rounded-xl hover:bg-library-700 shadow-md">Login</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="myHistoryResults" class="hidden">
-                        <div class="bg-indigo-900 text-white p-6 mx-6 rounded-2xl shadow-inner mb-6 relative overflow-hidden">
-                            <div class="absolute right-0 top-0 opacity-10"><i class="ph-fill ph-books text-9xl"></i></div>
-                            <h4 class="font-bold text-indigo-100 uppercase tracking-widest text-xs mb-2">Active Loans</h4>
-                            <ul id="myActiveList" class="space-y-2 relative z-10 text-lg font-medium"></ul>
-                            <div class="mt-6 pt-4 border-t border-indigo-800 flex gap-3 relative z-10">
-                                <button onclick="openLinkIDModal()" class="px-4 py-2 bg-indigo-800/50 hover:bg-indigo-700 rounded-lg text-xs font-bold uppercase tracking-wide border border-indigo-700 transition-colors flex items-center gap-2"><i class="ph-fill ph-identification-card"></i> Link ID</button>
-                            </div>
-                        </div>
-                        <div class="px-6 md:px-8 pb-8">
-                            <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="ph-bold ph-clock-counter-clockwise"></i> History Log</h4>
-                            <div class="overflow-hidden rounded-xl border border-slate-100">
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-sm text-left min-w-[300px]">
-                                        <thead class="bg-slate-50 text-xs text-slate-400 uppercase font-bold"><tr><th class="p-3 pl-4">Date</th><th class="p-3">Action</th><th class="p-3">Book</th></tr></thead>
-                                        <tbody id="myHistoryTable" class="divide-y divide-slate-50 bg-white"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div id="admin" class="hidden page-section page-enter max-w-[90rem] mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div class="bg-sys-black text-white p-6 flex flex-col justify-between h-32"><span class="font-mono text-[10px] text-sys-mid uppercase">TOTAL_USERS</span><span class="font-matrix text-4xl" id="statUsers">--</span></div>
+                    <div class="bg-white border border-sys-black p-6 flex flex-col justify-between h-32"><span class="font-mono text-[10px] text-sys-mid uppercase">ASSETS_DEPLOYED</span><span class="font-matrix text-4xl" id="statLoans">--</span></div>
+                    <div class="bg-white border border-sys-black p-6 flex flex-col justify-between h-32 relative overflow-hidden"><span class="font-mono text-[10px] text-alert uppercase font-bold">CRITICAL_OVERDUE</span><span class="font-matrix text-4xl text-alert" id="statOverdue">--</span><div class="absolute -right-4 -bottom-4 text-9xl text-alert/10 font-matrix pointer-events-none">!</div></div>
+                    <div class="bg-sys-light/30 border border-sys-black p-6 flex flex-col justify-center gap-2 h-32"><button onclick="reloadCatalog()" class="bg-white border border-sys-black px-4 py-2 font-mono text-xs hover:bg-sys-black hover:text-white transition-colors">[ SYSTEM_REFRESH ]</button><button onclick="logoutAdmin()" class="bg-sys-black text-white border border-sys-black px-4 py-2 font-mono text-xs hover:bg-alert hover:border-alert transition-colors">[ TERMINATE_SESSION ]</button></div>
+                </div>
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 h-[600px]">
+                    <div class="xl:col-span-2 bg-white border border-sys-black flex flex-col overflow-hidden"><div class="p-3 border-b border-sys-black bg-sys-light/20 flex justify-between items-center"><span class="font-mono text-xs font-bold uppercase">> ACTIVE_LOAN_MONITOR</span></div><div class="flex-1 overflow-auto"><table class="w-full font-mono text-xs text-left"><thead class="bg-sys-black text-white sticky top-0"><tr><th class="p-3">IDENTITY</th><th class="p-3">ASSET_ID</th><th class="p-3 text-right">T-MINUS</th></tr></thead><tbody id="adminActiveTable" class="divide-y divide-sys-light"></tbody></table></div></div>
+                    <div class="bg-sys-black text-sys-light font-mono text-xs p-4 overflow-y-auto flex flex-col gap-1 border border-sys-black"><div class="text-sys-mid mb-2">// SERVER_LOG_STREAM</div><table class="w-full text-left"><tbody id="adminHistoryTable" class="space-y-1 block"></tbody></table></div>
                 </div>
             </div>
 
-            <div id="admin" class="page-section hidden fade-enter max-w-[90rem] mx-auto">
-                <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
-                    <div><h3 class="text-2xl font-bold text-slate-800">Admin Dashboard</h3><p class="text-slate-500">System Overview & Alerts</p></div>
-                    <div class="flex gap-2 w-full md:w-auto">
-                        <button onclick="reloadCatalog()" class="flex-1 md:flex-none px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Refresh</button>
-                        <button onclick="logoutAdmin()" class="flex-1 md:flex-none px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-sm font-bold hover:bg-rose-100 transition-colors">Logout</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i class="ph-fill ph-users text-2xl"></i></div>
-                        <div><p class="text-xs font-bold text-slate-400 uppercase">Active Students</p><p class="text-xl font-bold text-slate-800" id="statUsers">-</p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div class="p-3 bg-orange-50 text-orange-600 rounded-xl"><i class="ph-fill ph-book-open text-2xl"></i></div>
-                        <div><p class="text-xs font-bold text-slate-400 uppercase">Books Out</p><p class="text-xl font-bold text-slate-800" id="statLoans">-</p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div class="p-3 bg-rose-50 text-rose-600 rounded-xl"><i class="ph-fill ph-warning-circle text-2xl"></i></div>
-                        <div><p class="text-xs font-bold text-slate-400 uppercase">Overdue</p><p class="text-xl font-bold text-slate-800" id="statOverdue">-</p></div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    <div class="xl:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                        <div class="p-6 border-b border-slate-100 flex justify-between items-center"><h4 class="font-bold text-slate-800 flex items-center gap-2"><i class="ph-fill ph-hourglass-medium text-orange-500"></i> Active Loans</h4></div>
-                        <div class="overflow-x-auto flex-1">
-                            <table class="w-full text-sm min-w-[500px]">
-                                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold"><tr><th class="p-4 text-left">Student</th><th class="p-4 text-left">Book</th><th class="p-4 text-left">Due Status</th></tr></thead>
-                                <tbody id="adminActiveTable" class="divide-y divide-slate-50"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[600px]">
-                        <div class="p-6 border-b border-slate-100"><h4 class="font-bold text-slate-800">Transaction Log</h4></div>
-                        <div class="overflow-y-auto flex-1 p-0">
-                            <table class="w-full text-sm">
-                                <thead class="bg-slate-50 text-xs uppercase text-slate-400 sticky top-0 z-10 font-bold"><tr><th class="p-3 pl-6 text-left">Type</th><th class="p-3 text-left">User</th><th class="p-3 text-left">Detail</th></tr></thead>
-                                <tbody id="adminHistoryTable" class="divide-y divide-slate-50"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </main>
 
     <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center">
-            <div class="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-bold ph-lock-key text-xl"></i></div>
-            <h3 class="text-xl font-bold mb-6">Restricted Access</h3>
-            <input type="password" id="adminPassInput" onkeydown="if(event.key==='Enter') attemptLogin()" class="block w-full text-center text-2xl tracking-[0.2em] px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-4 focus:border-slate-900 focus:bg-white transition-colors outline-none" placeholder="••••" autocomplete="new-password">
-            <p id="loginError" class="text-rose-500 text-xs font-bold mb-4 hidden bg-rose-50 py-2 rounded-lg">Incorrect Password</p>
-            <button onclick="attemptLogin()" class="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-transform active:scale-95">Unlock Panel</button>
-            <button onclick="closeLogin()" class="w-full py-3 mt-2 text-slate-400 text-sm hover:text-slate-600">Return</button>
+        <div class="bg-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <i class="ph-bold ph-terminal-window text-4xl mb-4"></i><h3 class="font-matrix text-2xl uppercase mb-6">RESTRICTED_ACCESS</h3>
+            <input type="password" id="adminPassInput" onkeydown="if(event.key==='Enter') attemptLogin()" class="block w-full text-center text-3xl font-matrix tracking-[0.5em] px-4 py-4 bg-sys-light/30 border-2 border-sys-black mb-4 focus:bg-white outline-none" placeholder="****" autocomplete="new-password">
+            <p id="loginError" class="text-alert font-mono text-xs mb-4 hidden">> ERR: INVALID_KEY</p>
+            <button onclick="attemptLogin()" class="w-full py-4 bg-sys-black text-white font-mono hover:bg-alert transition-colors">UNLOCK_TERMINAL</button>
+            <button onclick="closeLogin()" class="w-full py-2 mt-2 text-sys-mid text-xs font-mono hover:text-sys-black">[ ABORT ]</button>
         </div>
     </div>
 
     <div id="linkIDModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm relative text-center">
-            <button onclick="document.getElementById('linkIDModal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
-            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-identification-card text-3xl"></i></div>
-            <h3 class="text-xl font-bold mb-2">Link Student ID</h3>
-            <p class="text-slate-500 text-sm mb-6">Scan your physical ID card now to link it to your account.</p>
-            <input type="text" id="linkIDInput" onkeydown="handleLinkID(event)" class="block w-full p-4 bg-slate-50 border-2 border-indigo-100 rounded-2xl text-center font-mono text-lg focus:border-indigo-500 focus:bg-white outline-none transition-colors" placeholder="Scan ID..." autocomplete="off">
+        <div class="bg-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+            <button onclick="document.getElementById('linkIDModal').classList.add('hidden')" class="absolute top-2 right-2 text-sys-mid hover:text-sys-black"><i class="ph-bold ph-x"></i></button>
+            <i class="ph-bold ph-identification-card text-4xl mb-4"></i><h3 class="font-matrix text-2xl uppercase mb-2">LINK_PHYSICAL_TOKEN</h3><p class="font-mono text-xs text-sys-mid mb-6">SCAN_CARD_NOW_TO_BIND</p>
+            <input type="text" id="linkIDInput" onkeydown="handleLinkID(event)" class="block w-full p-4 bg-sys-light/30 border-2 border-sys-black text-center font-mono text-lg focus:bg-white outline-none" placeholder="WAITING_FOR_SCAN..." autocomplete="off">
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 left-6 md:left-auto bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
-        <div id="toastIcon" class="text-emerald-400 shrink-0"><i class="ph-fill ph-check-circle text-xl"></i></div>
-        <p id="toastMessage" class="font-medium text-sm truncate">Notification</p>
+    <div id="toast" class="fixed bottom-6 right-6 bg-sys-black text-white px-6 py-3 border-l-4 border-white translate-y-24 opacity-0 transition-all duration-300 z-50 font-mono text-xs shadow-xl flex items-center gap-3">
+        <div id="toastIcon" class="text-alert font-bold">>></div><p id="toastMessage" class="uppercase">SYSTEM_MESSAGE</p>
     </div>
 
     <script>
         let allBooks = [], activeStudents = [], adminPassword = "";
         let checkoutCart = []; 
 
-        // --- MOBILE SIDEBAR LOGIC ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('mainSidebar');
-            const overlay = document.getElementById('mobileOverlay');
-            
-            if (sidebar.classList.contains('drawer-closed')) {
-                sidebar.classList.remove('drawer-closed');
-                sidebar.classList.add('drawer-open');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.remove('drawer-open');
-                sidebar.classList.add('drawer-closed');
-                overlay.classList.add('hidden');
-            }
-        }
-
         function safe(str) {
             if(!str) return '';
             const txt = document.createElement('textarea');
             txt.innerHTML = str;
-            const decoded = txt.value;
-            const div = document.createElement('div');
-            div.textContent = decoded;
-            return div.innerHTML;
+            return txt.value; 
         }
 
         function groupBooks(list) {
@@ -362,34 +251,42 @@
         }
 
         function showPage(pageId, btn) {
-            // Close sidebar on mobile when navigating
-            const sidebar = document.getElementById('mainSidebar');
-            if(window.innerWidth < 768 && sidebar.classList.contains('drawer-open')) toggleSidebar();
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('nav-active'); el.classList.add('text-sys-mid');
+                el.querySelector('i').classList.remove('ph-fill'); el.querySelector('i').classList.add('ph');
+            });
+            if(btn && window.innerWidth >= 768) {
+                btn.classList.add('nav-active'); btn.classList.remove('text-sys-mid');
+                btn.querySelector('i').classList.remove('ph'); btn.querySelector('i').classList.add('ph-fill');
+            }
+            if(window.innerWidth < 768 && btn) {
+                 document.querySelectorAll('.nav-item-mobile').forEach(el => { el.classList.remove('bg-sys-mid/30', 'text-white'); el.classList.add('text-sys-mid'); });
+                 btn.classList.add('bg-sys-mid/30', 'text-white'); btn.classList.remove('text-sys-mid');
+            }
 
-            document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('bg-library-50', 'text-library-700'); el.classList.add('text-slate-500'); });
-            if(btn) { btn.classList.remove('text-slate-500'); btn.classList.add('bg-library-50', 'text-library-700'); }
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
-            const titles = { 'catalog': 'Catalogue', 'borrow': 'Check Out', 'return': 'Check In', 'admin': 'Admin', 'myaccount': 'User History' };
-            const subtitles = { 'catalog': 'Manage library inventory', 'borrow': 'Process new loans', 'return': 'Process returns', 'admin': 'System Dashboard', 'myaccount': 'Your reading log' };
+            
+            const titles = { 'catalog': 'CATALOG', 'borrow': 'OUTBOUND', 'return': 'INBOUND', 'myaccount': 'IDENTITY', 'admin': 'TERMINAL' };
+            const subtitles = { 'catalog': 'Index Search', 'borrow': 'Cart Active', 'return': 'Return Processing', 'myaccount': 'User Logs', 'admin': 'Root Access' };
             if(titles[pageId]) {
                 document.getElementById('pageTitle').innerText = titles[pageId];
-                document.getElementById('pageSubtitle').innerText = subtitles[pageId];
+                document.getElementById('pageSubtitle').innerText = subtitles[pageId] + " // v2.0";
             }
-            if(pageId === 'borrow') { checkoutCart = []; renderCart(); setTimeout(() => document.getElementById('borrowBarcode').focus(), 100); }
+
+            if(pageId === 'borrow') { setTimeout(() => document.getElementById('borrowBarcode').focus(), 100); }
             if(pageId === 'return') setTimeout(() => document.getElementById('returnBarcode').focus(), 100);
-            if(pageId === 'catalog') loadCatalog();
-            if(pageId === 'borrow') loadCatalog();
+            if(pageId === 'catalog' || pageId === 'borrow') loadCatalog();
             if(pageId === 'return') loadReturnList();
-            if(pageId === 'myaccount') resetUserAuthUI(); 
+            if(pageId === 'myaccount') resetUserAuthUI();
         }
 
         function showToast(msg, type='success') {
             const t = document.getElementById('toast');
             const icon = document.getElementById('toastIcon');
             document.getElementById('toastMessage').innerText = msg;
-            if(type === 'error') { icon.innerHTML = '<i class="ph-fill ph-warning-circle text-xl"></i>'; icon.className = 'text-rose-400'; } 
-            else { icon.innerHTML = '<i class="ph-fill ph-check-circle text-xl"></i>'; icon.className = 'text-emerald-400'; }
+            icon.innerText = type === 'error' ? '!!' : '>>';
+            icon.className = type === 'error' ? 'text-alert font-bold' : 'text-emerald-400 font-bold';
             t.classList.remove('translate-y-24', 'opacity-0');
             setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3000);
         }
@@ -398,70 +295,130 @@
             try {
                 const res = await fetch('api.php?action=books');
                 allBooks = await res.json();
-                renderTable(allBooks);
-                document.getElementById('statTotal').innerText = allBooks.length; 
+                renderCatalog(allBooks);
             } catch(e) { console.error(e); }
         }
 
-        function renderTable(books) {
+        // --- RENDER CATALOG WITH CART LOGIC ---
+        function renderCatalog(books) {
             const groupedBooks = groupBooks(books);
-            const tbody = document.getElementById('bookTable');
+            const grid = document.getElementById('bookGrid');
             const emptyState = document.getElementById('emptyCatalogState');
             
-            if(groupedBooks.length === 0) { tbody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+            if(groupedBooks.length === 0) { grid.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
 
-            tbody.innerHTML = groupedBooks.map(b => {
-                const availableCount = b._totalAvailable;
-                const available = availableCount > 0;
+            grid.innerHTML = groupedBooks.map(b => {
+                const avail = b._totalAvailable;
+                const status = avail > 0 ? `[AVL:${avail}]` : `[OUT_OF_STOCK]`;
+                const statusColor = avail > 0 ? 'text-sys-mid status-text' : 'text-alert status-text';
+                const idLabel = b._ids.length > 1 ? `${safe(b._ids[0])} +${b._ids.length-1}` : safe(b._ids[0]);
                 
-                const statusBadge = available 
-                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available (${availableCount})</span>` 
-                    : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">Out of Stock</span>`;
-                
-                let idDisplay = safe(b._ids[0]);
-                if (b._ids.length > 1) {
-                    idDisplay += ` <span class="text-[10px] bg-slate-100 text-slate-500 px-1 rounded ml-1">+${b._ids.length - 1}</span>`;
-                }
+                // CHECK IF IN CART
+                const isInCart = checkoutCart.some(item => item.id === b.id); 
+                // We assume 'b' here is the group leader. If ANY ID in the group is in cart, mark it.
+                // But for simplicity, we match the group leader ID since `addToCart` below pushes the specific book.
+                // Better: check if `b._ids` contains any ID that is in `checkoutCart`.
+                const anyInCart = b._ids.some(id => checkoutCart.some(item => item.id === id));
+                const activeClass = anyInCart ? 'card-selected' : 'bg-white';
 
-                return `<tr class="hover:bg-slate-50/80 transition-colors group">
-                    <td class="p-5 font-mono text-xs text-slate-400 group-hover:text-slate-600">${idDisplay}</td>
-                    <td class="p-5">
-                        <p class="font-bold text-slate-800 text-sm">${safe(b.name)}</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Shelf: ${safe(b.shelf)}</p>
-                    </td>
-                    <td class="p-5">
-                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200">${safe(b.category)}</span>
-                    </td>
-                    <td class="p-5 text-right">${statusBadge}</td>
-                </tr>`;
+                // We pass the First Available ID to the click handler
+                return `
+                <div class="${activeClass} border border-sys-black p-4 flex flex-col gap-2 cursor-pointer card-base transition-all group h-48 relative overflow-hidden" onclick="addToCartByCard('${safe(b._ids[0])}', ${avail})">
+                    <div class="flex justify-between items-start font-mono text-[10px] uppercase text-sys-mid relative z-10"><span>ID: ${idLabel}</span><span class="${statusColor}">${status}</span></div>
+                    <div class="mt-2 relative z-10"><h3 class="font-sans font-bold text-lg leading-tight uppercase">${safe(b.name)}</h3></div>
+                    <div class="mt-auto pt-4 border-t border-dashed border-sys-light group-hover:border-sys-mid/50 flex justify-between items-end font-mono text-xs text-sys-mid relative z-10"><span>${safe(b.category)}</span><span>LOC: ${safe(b.shelf)}</span></div>
+                     <div class="bg-num absolute -bottom-4 -right-4 text-9xl font-matrix text-sys-light/30 group-hover:text-sys-mid/20 pointer-events-none z-0 transition-colors">${safe(b.name).charAt(0)}</div>
+                </div>`;
             }).join('');
         }
 
         function filterCatalog() {
             const term = document.getElementById('searchBox').value.toLowerCase();
-            const filteredRaw = allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term));
-            renderTable(filteredRaw);
+            renderCatalog(allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term)));
+        }
+
+        // --- CART ACTIONS ---
+        function addToCartByCard(id, avail) {
+            if(avail <= 0) return showToast("ITEM_UNAVAILABLE", 'error');
+            const book = allBooks.find(b => String(b.id) === String(id));
+            if(book) { 
+                // Check duplicate
+                if(checkoutCart.find(b => b.id === book.id)) return showToast("DUPLICATE_ENTRY", 'error');
+                
+                checkoutCart.push(book); 
+                showToast(`ADDED: ${book.name}`);
+                updateUI(); // Updates Badges & Catalog Visuals
+            }
+        }
+
+        function addToCart(book) {
+            if(checkoutCart.find(b => b.id === book.id)) return showToast("DUPLICATE_ENTRY", 'error');
+            checkoutCart.push(book); 
+            updateUI();
+        }
+
+        function removeFromCart(index) { 
+            checkoutCart.splice(index, 1); 
+            updateUI(); 
+        }
+        
+        // CENTRAL UI UPDATE FUNCTION
+        function updateUI() {
+            renderCart();
+            renderCatalog(allBooks); // Re-render to show black background on selected items
+            
+            // Update Badges
+            const count = checkoutCart.length;
+            const badgeDesktop = document.getElementById('badge-borrow');
+            const badgeMobile = document.getElementById('badge-borrow-mobile');
+            
+            if(count > 0) {
+                badgeDesktop.classList.remove('hidden');
+                badgeMobile.classList.remove('hidden');
+            } else {
+                badgeDesktop.classList.add('hidden');
+                badgeMobile.classList.add('hidden');
+            }
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const emptyMsg = document.getElementById('emptyCartMsg');
+            const btnText = document.getElementById('checkoutBtnText');
+            const countText = document.getElementById('cartCount');
+            list.innerHTML = '';
+            countText.innerText = `ITEMS: ${checkoutCart.length}`;
+
+            if(checkoutCart.length === 0) { emptyMsg.classList.remove('hidden'); btnText.innerText = "INITIATE_TRANSFER"; } 
+            else {
+                emptyMsg.classList.add('hidden'); btnText.innerText = `CONFIRM_TRANSFER [${checkoutCart.length}]`;
+                checkoutCart.forEach((b, index) => {
+                    const li = document.createElement('li');
+                    li.className = "flex justify-between items-center group cursor-pointer hover:bg-sys-light/30 px-2 py-1 -mx-2 rounded";
+                    li.innerHTML = `<div class="truncate pr-4">> ${safe(b.name)}</div><button onclick="removeFromCart(${index})" class="text-sys-mid hover:text-alert text-xs">[DEL]</button>`;
+                    list.appendChild(li);
+                });
+            }
         }
 
         async function handleBarcode(event, type) {
             if (event.key !== 'Enter') return;
-            event.preventDefault(); 
             const code = event.target.value.trim();
             if (!code) return;
 
             const book = allBooks.find(b => String(b.id) === code);
             if (book) {
                 if (type === 'borrow') {
-                    if (book.available > 0) { addToCart(book); showToast(`Added to Cart: ${book.name}`); event.target.value = ''; } 
-                    else { showToast('Book Out of Stock', 'error'); event.target.value = ''; }
+                    if (book.available > 0) { addToCart(book); showToast(`ADDED: ${book.name}`); event.target.value = ''; } 
+                    else { showToast('ERR: OUT_OF_STOCK', 'error'); event.target.value = ''; }
                 } else if (type === 'return') {
                     const student = activeStudents.find(s => s.books.includes(book.name));
                     if (student) {
                         const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student: student.name, book: book.name, action: 'Return' }) });
-                        if(res.ok) { showToast('Returned: ' + book.name); loadReturnList(); event.target.value = ''; }
-                        else { showToast('Error returning', 'error'); }
-                    } else { showToast('Book not checked out', 'error'); event.target.value = ''; }
+                        if(res.ok) { showToast('SUCCESS: RETURNED'); loadReturnList(); event.target.value = ''; }
+                        else { showToast('ERR: TRANSACTION_FAILED', 'error'); }
+                    } else { showToast('ERR: NOT_CHECKED_OUT', 'error'); event.target.value = ''; }
                 }
                 return;
             }
@@ -471,213 +428,177 @@
                 const data = await res.json();
                 if(data.found) {
                     document.getElementById('borrowEmail').value = data.email;
-                    identifyUser(); event.target.value = ''; showToast(`Student ID Scanned: ${data.name}`);
-                } else { showToast("Unknown Barcode", 'error'); event.target.value = ''; }
-            } else { showToast("Barcode not found", 'error'); event.target.value = ''; }
+                    identifyUser(); event.target.value = ''; showToast(`ID_VERIFIED: ${data.name}`);
+                } else { showToast("ERR: UNKNOWN_BARCODE", 'error'); event.target.value = ''; }
+            } else { showToast("ERR: UNKNOWN_BARCODE", 'error'); event.target.value = ''; }
         }
 
-        function addToCart(book) {
-            if(checkoutCart.find(b => b.id === book.id)) return showToast("Book already in cart", 'error');
-            checkoutCart.push(book); renderCart();
+        async function identifyUser() {
+            const email = document.getElementById('borrowEmail').value;
+            const msg = document.getElementById('borrowIdentityMsg');
+            if(!email) { msg.innerText = 'WAITING_FOR_INPUT...'; msg.className = "h-4 mt-2 font-mono text-xs text-right text-sys-mid"; return; }
+            
+            const res = await fetch('api.php?action=check_user_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) });
+            const data = await res.json();
+            if(data.status === 'exists') { msg.className = 'h-4 mt-2 font-mono text-xs text-right text-emerald-600 font-bold'; msg.innerHTML = `VERIFIED: ${safe(data.name)}`; } 
+            else { msg.className = 'h-4 mt-2 font-mono text-xs text-right text-alert font-bold'; msg.innerHTML = `ERR: USER_UNKNOWN`; }
         }
-        function removeFromCart(index) { checkoutCart.splice(index, 1); renderCart(); }
-        function renderCart() {
-            const list = document.getElementById('cartList');
-            const emptyMsg = document.getElementById('emptyCartMsg');
+        
+        async function loadReturnList() { const res = await fetch('api.php?action=students'); activeStudents = await res.json(); } 
+        
+        async function processCheckout() {
+            const email = document.getElementById('borrowEmail').value;
+            if(!email) return showToast('ERR: ID_REQUIRED', 'error');
+            if(checkoutCart.length === 0) return showToast('ERR: MANIFEST_EMPTY', 'error');
             const btnText = document.getElementById('checkoutBtnText');
-            list.innerHTML = '';
-            if(checkoutCart.length === 0) { emptyMsg.classList.remove('hidden'); btnText.innerText = "Complete Checkout"; } 
-            else {
-                emptyMsg.classList.add('hidden'); btnText.innerText = `Checkout ${checkoutCart.length} Books`;
-                checkoutCart.forEach((b, index) => {
-                    const li = document.createElement('li');
-                    li.className = "flex justify-between items-center bg-white p-2 rounded border border-slate-200";
-                    li.innerHTML = `<span class="font-medium text-slate-700 truncate">${b.name}</span><button onclick="removeFromCart(${index})" class="text-rose-500 hover:text-rose-700 ml-2"><i class="ph-bold ph-trash"></i></button>`;
-                    list.appendChild(li);
-                });
+            btnText.innerText = "PROCESSING...";
+            let successCount = 0;
+            for (const book of checkoutCart) {
+                const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student: email, book: book.name, action: 'Borrow' }) });
+                if(res.ok) successCount++;
             }
+            if(successCount === checkoutCart.length) { showToast(`BATCH_COMPLETE: ${successCount} ITEMS`); checkoutCart = []; updateUI(); loadCatalog(); } 
+            else { showToast(`BATCH_INCOMPLETE`, 'error'); checkoutCart = []; updateUI(); }
+            btnText.innerText = "INITIATE_TRANSFER";
         }
 
+        // --- PART 3: AUTH LOGIC ---
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
+            document.getElementById('authContainer').classList.remove('hidden');
             document.getElementById('authStep2').classList.add('hidden');
-            document.getElementById('authStep1').classList.remove('hidden');
-            document.getElementById('authNameField').classList.add('hidden'); 
-            document.getElementById('authIdField').classList.add('hidden'); 
             const emailInput = document.getElementById('authEmail');
             emailInput.disabled = false; emailInput.value = '';
-            const passField = document.getElementById('authPassword');
-            passField.value = ''; passField.setAttribute('autocomplete', 'new-password'); 
+            document.getElementById('authPassword').value = '';
             document.getElementById('authNameInput').value = '';
-            document.getElementById('authMessage').innerText = "Verify Identity";
+            document.getElementById('authMessage').innerText = "VERIFY_CREDENTIALS...";
+            document.getElementById('authBtnAction').innerText = "AUTHENTICATE";
+            document.getElementById('authBtnAction').onclick = checkUserStatus;
             setTimeout(() => emailInput.focus(), 100);
         }
 
         async function checkUserStatus() {
             const email = document.getElementById('authEmail').value.trim();
-            if(!email) return showToast("Enter email", 'error');
-            const nextBtn = document.querySelector('#authStep1 button');
-            nextBtn.innerText = "Checking..."; nextBtn.disabled = true;
+            if(!email) return showToast("ERR: EMAIL_REQUIRED", 'error');
+            const btn = document.getElementById('authBtnAction');
+            btn.innerText = "CHECKING..."; btn.disabled = true;
+
             try {
                 const res = await fetch('api.php?action=check_user_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) });
                 const data = await res.json();
                 document.getElementById('authStep2').classList.remove('hidden');
-                document.getElementById('authEmail').disabled = true; 
-                const btn = document.getElementById('authBtnAction');
-                const msg = document.getElementById('authMessage');
-                const passInput = document.getElementById('authPassword');
-                const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn);
-                const newPassInput = passInput.cloneNode(true); passInput.parentNode.replaceChild(newPassInput, passInput);
+                document.getElementById('authEmail').disabled = true;
+                btn.disabled = false;
+
                 if(data.status === 'exists') {
-                    msg.innerHTML = `Welcome back, <span class="font-bold text-slate-800">${safe(data.name)}</span>`;
-                    newPassInput.focus(); newBtn.innerText = "Login";
-                    const loginAction = () => performLogin(email);
-                    newBtn.onclick = loginAction;
-                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') loginAction(); };
+                    document.getElementById('authMessage').innerHTML = `IDENTITY_CONFIRMED: ${safe(data.name)}`;
+                    document.getElementById('authNameInput').classList.add('hidden');
+                    document.getElementById('authIdInput').classList.add('hidden');
+                    btn.innerText = "LOGIN";
+                    btn.onclick = () => performLogin(email);
+                    document.getElementById('authPassword').focus();
                 } else {
-                    msg.innerHTML = "New Account Registration";
-                    document.getElementById('authNameField').classList.remove('hidden'); document.getElementById('authIdField').classList.remove('hidden'); 
-                    document.getElementById('authNameInput').focus(); newBtn.innerText = "Create Account";
-                    const regAction = () => performRegistration(email);
-                    newBtn.onclick = regAction;
-                    newPassInput.onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
-                    document.getElementById('authNameInput').onkeydown = (e) => { if(e.key === 'Enter') regAction(); };
+                    document.getElementById('authMessage').innerHTML = "NEW_IDENTITY_DETECTED";
+                    document.getElementById('authNameInput').classList.remove('hidden');
+                    document.getElementById('authIdInput').classList.remove('hidden');
+                    btn.innerText = "REGISTER_USER";
+                    btn.onclick = () => performRegistration(email);
+                    document.getElementById('authNameInput').focus();
                 }
-            } catch (e) { console.error(e); showToast("Connection Error", "error"); } finally { nextBtn.innerText = "Next"; nextBtn.disabled = false; }
+            } catch (e) { showToast("ERR: NETWORK_FAIL", "error"); btn.disabled = false; }
+        }
+
+        async function performLogin(email, overridePassword = null) {
+            const password = overridePassword || document.getElementById('authPassword').value;
+            if(!password) return showToast("ERR: PASSWORD_REQUIRED", 'error');
+            try {
+                const res = await fetch('api.php?action=user_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
+                if(res.status === 403 || res.status === 401) { showToast("ERR: ACCESS_DENIED", 'error'); document.getElementById('authPassword').value = ''; } 
+                else { const data = await res.json(); renderHistory(data); }
+            } catch(e) { console.error(e); }
         }
 
         async function performRegistration(email) {
             const password = document.getElementById('authPassword').value;
             const name = document.getElementById('authNameInput').value;
             const sid = document.getElementById('authIdInput').value;
-            if(!password || !name) return showToast("Name & Password required", 'error');
-            const btn = document.getElementById('authBtnAction');
-            btn.innerText = "Creating..."; btn.disabled = true;
+            if(!password || !name) return showToast("ERR: DATA_MISSING", 'error');
             try {
                 const res = await fetch('api.php?action=register_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password, name, student_id: sid }) });
-                if(res.ok) { showToast("Account Created!"); await performLogin(email, password); } 
-                else { const data = await res.json(); showToast(data.error || "Failed", 'error'); btn.innerText = "Create Account"; btn.disabled = false; }
-            } catch(e) { console.error(e); btn.innerText = "Create Account"; btn.disabled = false; }
-        }
-
-        async function performLogin(email, overridePassword = null) {
-            const password = overridePassword || document.getElementById('authPassword').value;
-            if(!password) return showToast("Enter Password", 'error');
-            const btn = document.getElementById('authBtnAction');
-            if(btn) { btn.innerText = "Verifying..."; btn.disabled = true; }
-            try {
-                const res = await fetch('api.php?action=user_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
-                if(res.status === 403 || res.status === 401) { showToast("Incorrect Password", 'error'); document.getElementById('authPassword').value = ''; document.getElementById('authPassword').focus(); if(btn) { btn.innerText = "Login"; btn.disabled = false; } } 
-                else { const data = await res.json(); renderHistory(data); }
-            } catch(e) { console.error(e); if(btn) { btn.innerText = "Retry"; btn.disabled = false; } }
+                if(res.ok) { showToast("IDENTITY_CREATED"); performLogin(email, password); } 
+                else { showToast("ERR: CREATION_FAILED", 'error'); }
+            } catch(e) { console.error(e); }
         }
 
         function renderHistory(data) {
-            document.getElementById('authStep1').classList.add('hidden'); document.getElementById('authStep2').classList.add('hidden'); document.getElementById('myHistoryResults').classList.remove('hidden');
-            const activeDiv = document.getElementById('myActiveList');
-            if(data.active.length === 0) { activeDiv.innerHTML = '<li class="text-indigo-200 text-sm italic py-2">No active loans.</li>'; } 
-            else { activeDiv.innerHTML = data.active.map(b => `<li class="flex items-start gap-3 py-1"><i class="ph-fill ph-book-open text-indigo-400 mt-1"></i> <span>${safe(b)}</span></li>`).join(''); }
-            document.getElementById('myHistoryTable').innerHTML = data.history.map(h => {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('myHistoryResults').classList.remove('hidden');
+            const name = document.getElementById('authMessage').innerText.replace('IDENTITY_CONFIRMED: ', '');
+            if(name && name !== "NEW_IDENTITY_DETECTED") document.getElementById('userNameDisplay').innerText = name;
+            const activeList = document.getElementById('myActiveList');
+            if(data.active.length === 0) activeList.innerHTML = '<li class="text-sys-mid italic text-xs">NO_ACTIVE_ASSETS</li>';
+            else activeList.innerHTML = data.active.map(b => `<li class="flex items-center gap-2"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div><span>${safe(b)}</span></li>`).join('');
+            const historyTable = document.getElementById('myHistoryTable');
+            historyTable.innerHTML = data.history.map(h => {
                 const isBorrow = h.Action === 'Borrow';
-                const badge = isBorrow ? `<span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase border border-indigo-100">Borrow</span>` : `<span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase border border-emerald-100">Return</span>`;
-                return `<tr class="hover:bg-slate-50"><td class="p-3 pl-4 text-slate-400 text-xs font-mono">${safe(h.Date)}</td><td class="p-3">${badge}</td><td class="p-3 font-medium text-slate-700">${safe(h.Book)}</td></tr>`;
+                const icon = isBorrow ? '<span class="text-sys-black font-bold">+</span>' : '<span class="text-sys-mid">-</span>';
+                return `<tr><td class="p-2 whitespace-nowrap text-sys-mid">${safe(h.Date)}</td><td class="p-2">${icon}</td><td class="p-2">${safe(h.Book)}</td></tr>`;
             }).join('');
         }
 
-        async function identifyUser() {
-            const email = document.getElementById('borrowEmail').value;
-            const msg = document.getElementById('borrowIdentityMsg');
-            if(!email) { msg.innerText = ''; return; }
-            const res = await fetch('api.php?action=check_user_status', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) });
-            const data = await res.json();
-            if(data.status === 'exists') { msg.className = 'text-xs font-bold text-center h-4 text-emerald-600'; msg.innerHTML = `<i class="ph-fill ph-check-circle"></i> ${safe(data.name)}`; } 
-            else { msg.className = 'text-xs font-bold text-center h-4 text-rose-500'; msg.innerHTML = `User not found`; }
-        }
-
         function openLinkIDModal() { document.getElementById('linkIDModal').classList.remove('hidden'); setTimeout(() => document.getElementById('linkIDInput').focus(), 100); }
-
         async function handleLinkID(event) {
             if (event.key !== 'Enter') return;
             const sid = event.target.value.trim();
             const email = document.getElementById('authEmail').value;
             if(!sid) return;
             const res = await fetch('api.php?action=link_student_id', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, student_id: sid }) });
-            if(res.ok) { showToast("ID Linked Successfully"); document.getElementById('linkIDModal').classList.add('hidden'); event.target.value = ''; } 
-            else { showToast("Failed to link ID", 'error'); }
+            if(res.ok) { showToast("TOKEN_LINKED"); document.getElementById('linkIDModal').classList.add('hidden'); event.target.value = ''; } 
+            else { showToast("ERR: LINK_FAILED", 'error'); }
         }
-        
-        function inspectUser(email) { showPage('myaccount'); document.getElementById('authEmail').value = email; performLogin(email, adminPassword); showToast("Inspecting " + email); }
 
-        function checkAdmin() { 
-            document.getElementById('adminPassInput').value = '';
-            if (adminPassword) showPage('admin'); else document.getElementById('loginOverlay').classList.remove('hidden'); 
-        }
+        // --- PART 3: ADMIN LOGIC ---
+        function checkAdmin() { document.getElementById('adminPassInput').value = ''; if (adminPassword) showPage('admin'); else document.getElementById('loginOverlay').classList.remove('hidden'); }
         function closeLogin() { document.getElementById('loginOverlay').classList.add('hidden'); }
-        
+        function logoutAdmin() { adminPassword = ""; document.getElementById('adminPassInput').value = ''; showPage('catalog'); }
+
         async function attemptLogin() {
             const pass = document.getElementById('adminPassInput').value;
             const res = await fetch('api.php?action=admin_active', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: pass }) });
             if(res.status === 403) document.getElementById('loginError').classList.remove('hidden');
-            else { adminPassword = pass; closeLogin(); loadAdminData(await res.json()); loadHistory(); showPage('admin'); }
+            else { adminPassword = pass; closeLogin(); loadAdminData(await res.json()); loadAdminHistory(); showPage('admin'); }
         }
-        
-        function logoutAdmin() { 
-            adminPassword = ""; 
-            document.getElementById('adminPassInput').value = '';
-            showPage('catalog'); 
-        }
-        
+
         function loadAdminData(loans) {
-            const tbody = document.getElementById('adminActiveTable');
             document.getElementById('statLoans').innerText = loans.length;
             document.getElementById('statOverdue').innerText = loans.filter(l => l.isOverdue).length;
-            if (loans.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400">No active loans.</td></tr>'; } 
+            const tbody = document.getElementById('adminActiveTable');
+            if (loans.length === 0) tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-sys-mid">// SYSTEM_IDLE</td></tr>';
             else {
                 tbody.innerHTML = loans.map(l => {
-                    const statusClass = l.isOverdue ? 'bg-rose-50/50' : '';
-                    const dayLabel = l.isOverdue ? `<span class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-100 px-2 py-1 rounded-md"><i class="ph-bold ph-warning"></i> +${Math.abs(l.daysLeft)} Days</span>` : `<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">${l.daysLeft} Days left</span>`;
-                    const identifier = l.email ? l.email : l.student;
-                    return `<tr class="${statusClass} border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors"><td class="p-4"><button onclick="inspectUser('${safe(identifier)}')" class="text-library-600 hover:text-library-800 font-bold text-sm text-left hover:underline block">${safe(l.student)}</button><span class="text-[10px] text-slate-400">${safe(l.email)}</span></td><td class="p-4 text-sm text-slate-700 font-medium">${safe(l.book)}</td><td class="p-4">${dayLabel}</td></tr>`;
+                    const rowClass = l.isOverdue ? 'text-alert' : '';
+                    const time = l.isOverdue ? `OVERDUE +${Math.abs(l.daysLeft)}` : `${l.daysLeft} DAYS`;
+                    const ident = l.email ? l.email : l.student;
+                    return `<tr class="hover:bg-sys-light/50 border-b border-sys-light"><td class="p-3 truncate max-w-[150px]" title="${safe(ident)}">${safe(ident)}</td><td class="p-3 truncate max-w-[150px]">${safe(l.book)}</td><td class="p-3 text-right ${rowClass}">${time}</td></tr>`;
                 }).join('');
             }
         }
 
-        async function loadHistory() {
+        async function loadAdminHistory() {
             const res = await fetch('api.php?action=admin_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) });
             const history = await res.json();
+            const uniqueUsers = [...new Set(history.map(item => item.Student))].length;
+            document.getElementById('statUsers').innerText = uniqueUsers;
             document.getElementById('adminHistoryTable').innerHTML = history.map(h => {
-                const isBorrow = h.Action === 'Borrow';
-                const badge = isBorrow ? '<span class="text-indigo-600 font-bold text-xs">OUT</span>' : '<span class="text-emerald-600 font-bold text-xs">IN</span>';
-                return `<tr class="hover:bg-slate-50"><td class="p-3 pl-6">${badge}</td><td class="p-3 text-slate-600 text-xs">${safe(h.Student)}</td><td class="p-3 text-slate-500 text-xs">${safe(h.Book)} <span class="text-slate-300 mx-1">•</span> ${safe(h.Date)}</td></tr>`;
+                const action = h.Action === 'Borrow' ? 'OUT' : 'IN ';
+                const color = h.Action === 'Borrow' ? 'text-sys-black' : 'text-sys-mid';
+                return `<tr><td class="whitespace-nowrap w-32">[${safe(h.Date)}]</td><td class="w-10 ${color}">${action}</td><td>${safe(h.Student)} :: ${safe(h.Book)}</td></tr>`;
             }).join('');
         }
         
-        async function reloadCatalog() { const res = await fetch('api.php?action=admin_reload', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) }); if(res.ok) showToast("System Reloaded"); }
-        async function loadBorrowList() { await loadCatalog(); const avail = allBooks.filter(b => b.available > 0); document.getElementById('borrowBookSelect').innerHTML = '<option value="">Select Book...</option>' + avail.map(b => `<option value="${safe(b.name)}">${safe(b.name)}</option>`).join(''); }
-        async function loadReturnList() { const res = await fetch('api.php?action=students'); activeStudents = await res.json(); } 
-        function updateReturnBooks() { }
-        
-        async function processCheckout() {
-            const email = document.getElementById('borrowEmail').value;
-            if(!email) return showToast('Scan user first', 'error');
-            if(checkoutCart.length === 0) return showToast('Cart is empty', 'error');
-            const btnText = document.getElementById('checkoutBtnText');
-            btnText.innerText = "Processing...";
-            let successCount = 0;
-            for (const book of checkoutCart) {
-                const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student: email, book: book.name, action: 'Borrow' }) });
-                if(res.ok) successCount++;
-            }
-            if(successCount === checkoutCart.length) { showToast(`Successfully checked out ${successCount} books`); checkoutCart = []; renderCart(); loadBorrowList(); } 
-            else { showToast(`Partial success: ${successCount}/${checkoutCart.length}`, 'error'); checkoutCart = []; renderCart(); }
-            btnText.innerText = "Complete Checkout";
-        }
-
-        async function submitTransaction(action) {
-            let student = "", book = "";
-            if (action === 'Return') { 
-                // Return Logic is handled inside handleBarcode mostly, but this is backup
-            }
+        async function reloadCatalog() { 
+            const res = await fetch('api.php?action=admin_reload', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ password: adminPassword }) }); 
+            if(res.ok) { showToast("SYSTEM_REFRESHED"); attemptLogin(); }
         }
 
         loadCatalog();
