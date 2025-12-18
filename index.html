@@ -327,16 +327,34 @@
 
         function safe(str) {
             if(!str) return '';
-            // FIX: Decode HTML entities (like &#039;) first using a textarea hack
-            // This ensures "What&#039;s" becomes "What's" BEFORE we display it
+            // Decode HTML entities (like &#039;) first using a textarea hack
             const txt = document.createElement('textarea');
             txt.innerHTML = str;
             const decoded = txt.value;
-            
-            // Then re-sanitize to prevent XSS (script tags)
+            // Then re-sanitize
             const div = document.createElement('div');
             div.textContent = decoded;
             return div.innerHTML;
+        }
+
+        // --- NEW FUNCTION: Groups books by Title ---
+        function groupBooks(list) {
+            const groups = {};
+            list.forEach(b => {
+                // Normalize key: trim whitespace and lowercase to group accurately
+                const key = b.name.trim().toLowerCase(); 
+                if (!groups[key]) {
+                    groups[key] = {
+                        ...b,
+                        _ids: [b.id], // track all IDs
+                        _totalAvailable: parseInt(b.available) || 0
+                    };
+                } else {
+                    groups[key]._ids.push(b.id);
+                    groups[key]._totalAvailable += (parseInt(b.available) || 0);
+                }
+            });
+            return Object.values(groups);
         }
 
         function showPage(pageId, btn) {
@@ -373,25 +391,54 @@
                 const res = await fetch('api.php?action=books');
                 allBooks = await res.json();
                 renderTable(allBooks);
-                document.getElementById('statTotal').innerText = allBooks.length;
+                document.getElementById('statTotal').innerText = allBooks.length; // This counts total copies
             } catch(e) { console.error(e); }
         }
 
         function renderTable(books) {
+            // Apply grouping before rendering
+            const groupedBooks = groupBooks(books);
+
             const tbody = document.getElementById('bookTable');
             const emptyState = document.getElementById('emptyCatalogState');
-            if(books.length === 0) { tbody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
+            
+            if(groupedBooks.length === 0) { tbody.innerHTML = ''; emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
-            tbody.innerHTML = books.map(b => {
-                const available = b.available > 0;
-                const statusBadge = available ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available (${b.available})</span>` : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">Out of Stock</span>`;
-                return `<tr class="hover:bg-slate-50/80 transition-colors group"><td class="p-5 font-mono text-xs text-slate-400 group-hover:text-slate-600">${safe(b.id)}</td><td class="p-5"><p class="font-bold text-slate-800 text-sm">${safe(b.name)}</p><p class="text-xs text-slate-400 mt-0.5">Shelf: ${safe(b.shelf)}</p></td><td class="p-5"><span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200">${safe(b.category)}</span></td><td class="p-5 text-right">${statusBadge}</td></tr>`;
+
+            tbody.innerHTML = groupedBooks.map(b => {
+                const availableCount = b._totalAvailable;
+                const available = availableCount > 0;
+                
+                // Badge Logic
+                const statusBadge = available 
+                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available (${availableCount})</span>` 
+                    : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">Out of Stock</span>`;
+                
+                // ID Display Logic
+                let idDisplay = safe(b._ids[0]);
+                if (b._ids.length > 1) {
+                    idDisplay += ` <span class="text-[10px] bg-slate-100 text-slate-500 px-1 rounded ml-1">+${b._ids.length - 1}</span>`;
+                }
+
+                return `<tr class="hover:bg-slate-50/80 transition-colors group">
+                    <td class="p-5 font-mono text-xs text-slate-400 group-hover:text-slate-600">${idDisplay}</td>
+                    <td class="p-5">
+                        <p class="font-bold text-slate-800 text-sm">${safe(b.name)}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Shelf: ${safe(b.shelf)}</p>
+                    </td>
+                    <td class="p-5">
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200">${safe(b.category)}</span>
+                    </td>
+                    <td class="p-5 text-right">${statusBadge}</td>
+                </tr>`;
             }).join('');
         }
 
         function filterCatalog() {
             const term = document.getElementById('searchBox').value.toLowerCase();
-            renderTable(allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term)));
+            // We filter the RAW list first, so you can still search by specific barcode
+            const filteredRaw = allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term));
+            renderTable(filteredRaw);
         }
 
         async function handleBarcode(event, type) {
