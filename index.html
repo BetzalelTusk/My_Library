@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LibraryOS // N-Edition</title>
+    <title>LibraryOS // N-Edition (Grey)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -19,45 +19,65 @@
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        sys: { black: '#0a0a0a', dark: '#171717', mid: '#525252', light: '#e5e5e5', white: '#ffffff' },
+                        sys: { 
+                            black: '#27272a', // Zinc-800 (Charcoal)
+                            dark: '#3f3f46',  
+                            mid: '#71717a',   
+                            light: '#d4d4d8', 
+                            white: '#f4f4f5'  // Zinc-100 (Off White)
+                        },
                         alert: '#D71921' 
-                    },
-                    backgroundImage: {
-                        'noise': "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyNlNWU1ZTUnLz4KPC9zdmc+')"
                     }
                 } 
             }
         }
     </script>
     <style>
-        body { background-color: #f5f5f5; font-family: 'Space Grotesk', sans-serif; color: #0a0a0a; }
-        .bg-grid { background-size: 20px 20px; background-image: radial-gradient(circle, #d4d4d4 1.5px, transparent 1.5px); }
+        body { background-color: theme('colors.sys.white'); font-family: 'Space Grotesk', sans-serif; color: theme('colors.sys.black'); }
+        
+        /* FIX: Made dots darker and slightly larger for visibility */
+        .bg-grid { 
+            background-size: 24px 24px; 
+            background-image: radial-gradient(circle, #cbd5e1 2px, transparent 2px); 
+        }
+        
         .page-enter { animation: glitchFade 0.3s ease-out forwards; opacity: 0; }
         @keyframes glitchFade { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
+        
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #000; }
-        ::-webkit-scrollbar-thumb:hover { background: #D71921; }
-        .nav-active { background-color: #0a0a0a; color: #ffffff; }
+        ::-webkit-scrollbar-thumb { background: theme('colors.sys.black'); }
+        ::-webkit-scrollbar-thumb:hover { background: theme('colors.alert'); }
+        
+        .nav-active { background-color: theme('colors.sys.black'); color: theme('colors.sys.white'); }
         .blink-dot { animation: blink 2s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         
-        /* Interactive Card States */
         .card-base { transition: all 0.2s; }
-        .card-base:hover { border-color: #000; }
+        .card-base:hover { border-color: theme('colors.sys.black'); }
         
-        /* Selected State (In Cart) */
-        .card-selected { background-color: #0a0a0a; color: #ffffff; border-color: #0a0a0a; }
-        .card-selected .text-sys-mid { color: #a3a3a3; }
-        .card-selected .status-text { color: #ffffff; }
-        .card-selected .bg-num { color: rgba(255,255,255,0.1); }
+        .card-selected { 
+            background-color: #27272a !important; /* Forces Dark Charcoal Background */
+            color: #f4f4f5 !important;            /* Forces Light Text */
+            border-color: #27272a !important;     /* Hides Border */
+        }
         
-        .glass-overlay { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); }
+        /* Force all children text elements to turn light */
+        .card-selected * {
+            color: #f4f4f5 !important;
+            border-color: rgba(255, 255, 255, 0.2) !important; /* Lighten internal borders */
+        }
+        
+        /* Specific tweaks for inner elements */
+        .card-selected .text-sys-mid { color: #a1a1aa !important; } 
+        .card-selected .bg-num { color: #ffffff !important; opacity: 0.1; }
+        
+        .glass-overlay { background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(4px); }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex relative bg-grid">
 
-    <aside class="hidden md:flex flex-col w-24 h-screen z-20 items-center py-6 relative bg-white/50 backdrop-blur-sm border-r border-sys-light/50">
+    <aside class="hidden md:flex flex-col w-24 h-screen z-20 items-center py-6 relative bg-sys-white/80 backdrop-blur-sm border-r border-sys-light/50">
         <div class="mb-12 flex flex-col items-center gap-1">
             <i class="ph-fill ph-circles-four text-3xl text-sys-black"></i>
             <span class="font-matrix text-[10px] tracking-widest text-sys-mid">LOS</span>
@@ -87,17 +107,15 @@
         </div>
     </aside>
 
-    <div class="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-sys-black text-white rounded-full z-50 flex justify-around items-center px-2 shadow-2xl">
-        <button onclick="showPage('catalog', this)" class="nav-item-mobile p-3 rounded-full bg-sys-mid/30 text-white"><i class="ph-fill ph-book-open text-xl"></i></button>
-        
-        <button onclick="showPage('borrow', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-white relative">
+    <div class="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-sys-black text-sys-white rounded-full z-50 flex justify-around items-center px-2 shadow-2xl">
+        <button onclick="showPage('catalog', this)" class="nav-item-mobile p-3 rounded-full bg-sys-mid/30 text-sys-white"><i class="ph-fill ph-book-open text-xl"></i></button>
+        <button onclick="showPage('borrow', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-sys-white relative">
             <i class="ph-bold ph-arrow-up-right text-xl"></i>
             <span id="badge-borrow-mobile" class="hidden absolute top-2 right-2 w-2 h-2 bg-alert rounded-full border border-sys-black"></span>
         </button>
-
         <div class="w-[1px] h-4 bg-sys-mid"></div>
-        <button onclick="showPage('return', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-white"><i class="ph-bold ph-arrow-down-left text-xl"></i></button>
-        <button onclick="showPage('myaccount', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-white"><i class="ph-bold ph-fingerprint text-xl"></i></button>
+        <button onclick="showPage('return', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-sys-white"><i class="ph-bold ph-arrow-down-left text-xl"></i></button>
+        <button onclick="showPage('myaccount', this)" class="nav-item-mobile p-3 rounded-full text-sys-mid hover:text-sys-white"><i class="ph-bold ph-fingerprint text-xl"></i></button>
     </div>
 
     <main class="flex-1 relative z-10 h-full overflow-hidden flex flex-col">
@@ -106,7 +124,7 @@
                 <div>
                     <h1 id="pageTitle" class="font-matrix text-4xl md:text-6xl text-sys-black uppercase leading-none tracking-tight">CATALOG</h1>
                     <div class="flex items-center gap-3 mt-2">
-                        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-sys-black text-white text-[10px] font-mono rounded-sm">
+                        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-sys-black text-sys-white text-[10px] font-mono rounded-sm">
                             <div class="w-1.5 h-1.5 bg-alert rounded-full blink-dot"></div><span>SYS.ONLINE</span>
                         </div>
                         <p id="pageSubtitle" class="font-mono text-xs uppercase text-sys-mid tracking-widest">Index // v2.0</p>
@@ -120,7 +138,7 @@
             
             <div id="catalog" class="page-section page-enter">
                 <div class="mb-8 relative group">
-                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full bg-transparent border-b border-sys-mid/30 text-2xl md:text-3xl font-matrix py-4 focus:border-sys-black outline-none placeholder-sys-light uppercase transition-colors" placeholder="[ ENTER_QUERY_ ]">
+                    <input type="text" id="searchBox" onkeyup="filterCatalog()" class="block w-full bg-transparent border-b border-sys-mid/30 text-2xl md:text-3xl font-matrix py-4 focus:border-sys-black outline-none placeholder-sys-mid uppercase transition-colors" placeholder="[ ENTER_QUERY_ ]">
                     <div class="absolute right-0 top-1/2 -translate-y-1/2 text-sys-mid/50 text-xs font-mono">[ SEARCH_INDEX ]</div>
                 </div>
                 <div id="bookGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
@@ -128,8 +146,8 @@
             </div>
 
             <div id="borrow" class="page-section hidden page-enter max-w-2xl mx-auto">
-                <div class="border border-sys-black p-1 bg-white">
-                    <div class="bg-sys-black text-white p-2 font-mono text-xs flex justify-between"><span>// OUTBOUND_MANIFEST</span><span id="cartCount">ITEMS: 0</span></div>
+                <div class="border border-sys-black p-1 bg-sys-white">
+                    <div class="bg-sys-black text-sys-white p-2 font-mono text-xs flex justify-between"><span>// OUTBOUND_MANIFEST</span><span id="cartCount">ITEMS: 0</span></div>
                     <div class="p-6 md:p-8 space-y-8">
                         <div>
                             <label class="font-mono text-[10px] text-sys-mid uppercase tracking-widest mb-2 block">01. TARGET_IDENTITY</label>
@@ -144,22 +162,22 @@
                             <ul id="cartList" class="space-y-2 font-mono text-sm"></ul>
                             <div id="emptyCartMsg" class="text-center text-sys-mid/50 text-xs py-4">// MANIFEST_EMPTY</div>
                         </div>
-                        <button onclick="processCheckout()" class="w-full bg-sys-black text-white py-4 font-matrix text-lg hover:bg-alert transition-colors"><span id="checkoutBtnText">INITIATE_TRANSFER</span></button>
+                        <button onclick="processCheckout()" class="w-full bg-sys-black text-sys-white py-4 font-matrix text-lg hover:bg-alert transition-colors"><span id="checkoutBtnText">INITIATE_TRANSFER</span></button>
                     </div>
                 </div>
             </div>
 
             <div id="return" class="page-section hidden page-enter max-w-2xl mx-auto">
-                <div class="border border-sys-black p-6 md:p-10 bg-white text-center">
+                <div class="border border-sys-black p-6 md:p-10 bg-sys-white text-center">
                     <i class="ph-bold ph-arrow-down-left text-4xl mb-4 text-sys-mid"></i>
                     <h2 class="font-matrix text-2xl uppercase mb-6">INBOUND_PROCESSING</h2>
-                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full bg-sys-light/30 border-2 border-sys-black p-4 font-mono text-center text-xl focus:bg-white outline-none mb-4" placeholder="[ SCAN_TO_RETURN ]">
+                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full bg-sys-light/30 border-2 border-sys-black p-4 font-mono text-center text-xl focus:bg-sys-white outline-none mb-4" placeholder="[ SCAN_TO_RETURN ]">
                     <p class="font-mono text-xs text-sys-mid">// AUTO_COMMIT_ON_SCAN</p>
                 </div>
             </div>
 
             <div id="myaccount" class="hidden page-section page-enter max-w-3xl mx-auto">
-                <div class="bg-white border border-sys-black p-1">
+                <div class="bg-sys-white border border-sys-black p-1">
                     <div class="bg-sys-light p-2 font-mono text-xs text-sys-mid flex justify-between"><span>// USER_DOSSIER</span><span>SECURE_CONN</span></div>
                     <div id="authContainer" class="p-8 md:p-12 text-center">
                         <i class="ph-bold ph-fingerprint text-4xl mb-6 text-sys-black"></i>
@@ -171,13 +189,13 @@
                                 <input type="text" id="authIdInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="SCAN_ID_CARD">
                                 <input type="password" id="authPassword" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="PASSWORD">
                             </div>
-                            <button id="authBtnAction" onclick="checkUserStatus()" class="w-full bg-sys-black text-white py-4 font-matrix text-lg hover:bg-alert transition-colors">AUTHENTICATE</button>
+                            <button id="authBtnAction" onclick="checkUserStatus()" class="w-full bg-sys-black text-sys-white py-4 font-matrix text-lg hover:bg-alert transition-colors">AUTHENTICATE</button>
                         </div>
                     </div>
                     <div id="myHistoryResults" class="hidden p-6 md:p-8">
                         <div class="flex items-center justify-between mb-8 border-b border-sys-black pb-4">
                             <div><h2 id="userNameDisplay" class="font-matrix text-2xl uppercase">UNKNOWN_USER</h2><p class="font-mono text-xs text-sys-mid">ACCESS_LEVEL: STUDENT</p></div>
-                            <button onclick="openLinkIDModal()" class="text-xs font-mono border border-sys-mid px-3 py-1 hover:bg-sys-black hover:text-white transition-colors">[ LINK_PHYSICAL_ID ]</button>
+                            <button onclick="openLinkIDModal()" class="text-xs font-mono border border-sys-mid px-3 py-1 hover:bg-sys-black hover:text-sys-white transition-colors">[ LINK_PHYSICAL_ID ]</button>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div><h3 class="font-mono text-xs text-sys-mid uppercase mb-4">// ACTIVE_ASSETS</h3><ul id="myActiveList" class="space-y-2 font-mono text-sm border-l-2 border-sys-black pl-4"></ul></div>
@@ -189,13 +207,24 @@
 
             <div id="admin" class="hidden page-section page-enter max-w-[90rem] mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div class="bg-sys-black text-white p-6 flex flex-col justify-between h-32"><span class="font-mono text-[10px] text-sys-mid uppercase">TOTAL_USERS</span><span class="font-matrix text-4xl" id="statUsers">--</span></div>
-                    <div class="bg-white border border-sys-black p-6 flex flex-col justify-between h-32"><span class="font-mono text-[10px] text-sys-mid uppercase">ASSETS_DEPLOYED</span><span class="font-matrix text-4xl" id="statLoans">--</span></div>
-                    <div class="bg-white border border-sys-black p-6 flex flex-col justify-between h-32 relative overflow-hidden"><span class="font-mono text-[10px] text-alert uppercase font-bold">CRITICAL_OVERDUE</span><span class="font-matrix text-4xl text-alert" id="statOverdue">--</span><div class="absolute -right-4 -bottom-4 text-9xl text-alert/10 font-matrix pointer-events-none">!</div></div>
-                    <div class="bg-sys-light/30 border border-sys-black p-6 flex flex-col justify-center gap-2 h-32"><button onclick="reloadCatalog()" class="bg-white border border-sys-black px-4 py-2 font-mono text-xs hover:bg-sys-black hover:text-white transition-colors">[ SYSTEM_REFRESH ]</button><button onclick="logoutAdmin()" class="bg-sys-black text-white border border-sys-black px-4 py-2 font-mono text-xs hover:bg-alert hover:border-alert transition-colors">[ TERMINATE_SESSION ]</button></div>
+                    <div class="bg-sys-black text-sys-white p-6 flex flex-col justify-between h-32"><span class="font-mono text-[10px] text-sys-mid uppercase">TOTAL_USERS</span><span class="font-matrix text-4xl" id="statUsers">--</span></div>
+                    <div class="bg-sys-white border border-sys-black p-6 flex flex-col justify-between h-32"><span class="font-mono text-[10px] text-sys-mid uppercase">ASSETS_DEPLOYED</span><span class="font-matrix text-4xl" id="statLoans">--</span></div>
+                    <div class="bg-sys-white border border-sys-black p-6 flex flex-col justify-between h-32 relative overflow-hidden"><span class="font-mono text-[10px] text-alert uppercase font-bold">CRITICAL_OVERDUE</span><span class="font-matrix text-4xl text-alert" id="statOverdue">--</span><div class="absolute -right-4 -bottom-4 text-9xl text-alert/10 font-matrix pointer-events-none">!</div></div>
+                    <div class="bg-sys-light/30 border border-sys-black p-6 flex flex-col justify-center gap-2 h-32">
+                        <button onclick="reloadCatalog()" class="bg-sys-white border border-sys-black px-4 py-2 font-mono text-xs hover:bg-sys-black hover:text-sys-white transition-colors">[ SYSTEM_REFRESH ]</button>
+                        <button onclick="logoutAdmin()" class="bg-alert text-sys-white border border-alert px-4 py-2 font-mono text-xs hover:bg-sys-black hover:border-sys-black transition-colors">[ TERMINATE_SESSION ]</button>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 h-[600px]">
-                    <div class="xl:col-span-2 bg-white border border-sys-black flex flex-col overflow-hidden"><div class="p-3 border-b border-sys-black bg-sys-light/20 flex justify-between items-center"><span class="font-mono text-xs font-bold uppercase">> ACTIVE_LOAN_MONITOR</span></div><div class="flex-1 overflow-auto"><table class="w-full font-mono text-xs text-left"><thead class="bg-sys-black text-white sticky top-0"><tr><th class="p-3">IDENTITY</th><th class="p-3">ASSET_ID</th><th class="p-3 text-right">T-MINUS</th></tr></thead><tbody id="adminActiveTable" class="divide-y divide-sys-light"></tbody></table></div></div>
+                    <div class="xl:col-span-2 bg-sys-white border border-sys-black flex flex-col overflow-hidden">
+                        <div class="p-3 border-b border-sys-black bg-sys-light/20 flex justify-between items-center"><span class="font-mono text-xs font-bold uppercase">> ACTIVE_LOAN_MONITOR</span></div>
+                        <div class="flex-1 w-full overflow-x-auto">
+                            <table class="w-full font-mono text-xs text-left min-w-[500px]">
+                                <thead class="bg-sys-black text-sys-white sticky top-0"><tr><th class="p-3">IDENTITY</th><th class="p-3">ASSET_ID</th><th class="p-3 text-right">T-MINUS</th></tr></thead>
+                                <tbody id="adminActiveTable" class="divide-y divide-sys-light"></tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div class="bg-sys-black text-sys-light font-mono text-xs p-4 overflow-y-auto flex flex-col gap-1 border border-sys-black"><div class="text-sys-mid mb-2">// SERVER_LOG_STREAM</div><table class="w-full text-left"><tbody id="adminHistoryTable" class="space-y-1 block"></tbody></table></div>
                 </div>
             </div>
@@ -204,24 +233,24 @@
     </main>
 
     <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
-        <div class="bg-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div class="bg-sys-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <i class="ph-bold ph-terminal-window text-4xl mb-4"></i><h3 class="font-matrix text-2xl uppercase mb-6">RESTRICTED_ACCESS</h3>
-            <input type="password" id="adminPassInput" onkeydown="if(event.key==='Enter') attemptLogin()" class="block w-full text-center text-3xl font-matrix tracking-[0.5em] px-4 py-4 bg-sys-light/30 border-2 border-sys-black mb-4 focus:bg-white outline-none" placeholder="****" autocomplete="new-password">
+            <input type="password" id="adminPassInput" onkeydown="if(event.key==='Enter') attemptLogin()" class="block w-full text-center text-3xl font-matrix tracking-[0.5em] px-4 py-4 bg-sys-light/30 border-2 border-sys-black mb-4 focus:bg-sys-white outline-none" placeholder="****" autocomplete="new-password">
             <p id="loginError" class="text-alert font-mono text-xs mb-4 hidden">> ERR: INVALID_KEY</p>
-            <button onclick="attemptLogin()" class="w-full py-4 bg-sys-black text-white font-mono hover:bg-alert transition-colors">UNLOCK_TERMINAL</button>
+            <button onclick="attemptLogin()" class="w-full py-4 bg-sys-black text-sys-white font-mono hover:bg-alert transition-colors">UNLOCK_TERMINAL</button>
             <button onclick="closeLogin()" class="w-full py-2 mt-2 text-sys-mid text-xs font-mono hover:text-sys-black">[ ABORT ]</button>
         </div>
     </div>
 
     <div id="linkIDModal" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
-        <div class="bg-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+        <div class="bg-sys-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
             <button onclick="document.getElementById('linkIDModal').classList.add('hidden')" class="absolute top-2 right-2 text-sys-mid hover:text-sys-black"><i class="ph-bold ph-x"></i></button>
             <i class="ph-bold ph-identification-card text-4xl mb-4"></i><h3 class="font-matrix text-2xl uppercase mb-2">LINK_PHYSICAL_TOKEN</h3><p class="font-mono text-xs text-sys-mid mb-6">SCAN_CARD_NOW_TO_BIND</p>
-            <input type="text" id="linkIDInput" onkeydown="handleLinkID(event)" class="block w-full p-4 bg-sys-light/30 border-2 border-sys-black text-center font-mono text-lg focus:bg-white outline-none" placeholder="WAITING_FOR_SCAN..." autocomplete="off">
+            <input type="text" id="linkIDInput" onkeydown="handleLinkID(event)" class="block w-full p-4 bg-sys-light/30 border-2 border-sys-black text-center font-mono text-lg focus:bg-sys-white outline-none" placeholder="WAITING_FOR_SCAN..." autocomplete="off">
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 bg-sys-black text-white px-6 py-3 border-l-4 border-white translate-y-24 opacity-0 transition-all duration-300 z-50 font-mono text-xs shadow-xl flex items-center gap-3">
+    <div id="toast" class="fixed bottom-6 right-6 bg-sys-black text-sys-white px-6 py-3 border-l-4 border-sys-white translate-y-24 opacity-0 transition-all duration-300 z-50 font-mono text-xs shadow-xl flex items-center gap-3">
         <div id="toastIcon" class="text-alert font-bold">>></div><p id="toastMessage" class="uppercase">SYSTEM_MESSAGE</p>
     </div>
 
@@ -251,6 +280,20 @@
         }
 
         function showPage(pageId, btn) {
+            // FIX: Clear Inputs on Tab Switch
+            document.getElementById('searchBox').value = '';
+            document.getElementById('borrowEmail').value = '';
+            document.getElementById('borrowBarcode').value = '';
+            document.getElementById('returnBarcode').value = '';
+            document.getElementById('borrowIdentityMsg').innerText = 'WAITING_FOR_INPUT...';
+            document.getElementById('borrowIdentityMsg').className = "h-4 mt-2 font-mono text-xs text-right text-sys-mid";
+
+            // If returning to catalog, reset filter
+            if(pageId === 'catalog') {
+                renderCatalog(allBooks);
+            }
+
+            // ... Existing Nav Logic ...
             document.querySelectorAll('.nav-item').forEach(el => {
                 el.classList.remove('nav-active'); el.classList.add('text-sys-mid');
                 el.querySelector('i').classList.remove('ph-fill'); el.querySelector('i').classList.add('ph');
@@ -260,8 +303,8 @@
                 btn.querySelector('i').classList.remove('ph'); btn.querySelector('i').classList.add('ph-fill');
             }
             if(window.innerWidth < 768 && btn) {
-                 document.querySelectorAll('.nav-item-mobile').forEach(el => { el.classList.remove('bg-sys-mid/30', 'text-white'); el.classList.add('text-sys-mid'); });
-                 btn.classList.add('bg-sys-mid/30', 'text-white'); btn.classList.remove('text-sys-mid');
+                 document.querySelectorAll('.nav-item-mobile').forEach(el => { el.classList.remove('bg-sys-mid/30', 'text-sys-white'); el.classList.add('text-sys-mid'); });
+                 btn.classList.add('bg-sys-mid/30', 'text-sys-white'); btn.classList.remove('text-sys-mid');
             }
 
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
@@ -299,7 +342,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- RENDER CATALOG WITH CART LOGIC ---
         function renderCatalog(books) {
             const groupedBooks = groupBooks(books);
             const grid = document.getElementById('bookGrid');
@@ -315,12 +357,8 @@
                 const idLabel = b._ids.length > 1 ? `${safe(b._ids[0])} +${b._ids.length-1}` : safe(b._ids[0]);
                 
                 // CHECK IF IN CART
-                const isInCart = checkoutCart.some(item => item.id === b.id); 
-                // We assume 'b' here is the group leader. If ANY ID in the group is in cart, mark it.
-                // But for simplicity, we match the group leader ID since `addToCart` below pushes the specific book.
-                // Better: check if `b._ids` contains any ID that is in `checkoutCart`.
                 const anyInCart = b._ids.some(id => checkoutCart.some(item => item.id === id));
-                const activeClass = anyInCart ? 'card-selected' : 'bg-white';
+                const activeClass = anyInCart ? 'card-selected' : 'bg-sys-white';
 
                 // We pass the First Available ID to the click handler
                 return `
@@ -338,24 +376,24 @@
             renderCatalog(allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term)));
         }
 
-        // --- CART ACTIONS ---
+        // --- CART ACTIONS (TOGGLE LOGIC) ---
         function addToCartByCard(id, avail) {
-            if(avail <= 0) return showToast("ITEM_UNAVAILABLE", 'error');
             const book = allBooks.find(b => String(b.id) === String(id));
-            if(book) { 
-                // Check duplicate
-                if(checkoutCart.find(b => b.id === book.id)) return showToast("DUPLICATE_ENTRY", 'error');
-                
+            if(!book) return;
+
+            // Check if already in cart
+            const index = checkoutCart.findIndex(b => b.id === book.id);
+            if(index !== -1) {
+                // If in cart, REMOVE it (Toggle behavior)
+                removeFromCart(index);
+                showToast(`REMOVED: ${book.name}`);
+            } else {
+                // If not in cart, ADD it
+                if(avail <= 0) return showToast("ITEM_UNAVAILABLE", 'error');
                 checkoutCart.push(book); 
                 showToast(`ADDED: ${book.name}`);
-                updateUI(); // Updates Badges & Catalog Visuals
+                updateUI();
             }
-        }
-
-        function addToCart(book) {
-            if(checkoutCart.find(b => b.id === book.id)) return showToast("DUPLICATE_ENTRY", 'error');
-            checkoutCart.push(book); 
-            updateUI();
         }
 
         function removeFromCart(index) { 
@@ -363,10 +401,9 @@
             updateUI(); 
         }
         
-        // CENTRAL UI UPDATE FUNCTION
         function updateUI() {
             renderCart();
-            renderCatalog(allBooks); // Re-render to show black background on selected items
+            renderCatalog(allBooks); // Re-render to show active state
             
             // Update Badges
             const count = checkoutCart.length;
@@ -410,8 +447,19 @@
             const book = allBooks.find(b => String(b.id) === code);
             if (book) {
                 if (type === 'borrow') {
-                    if (book.available > 0) { addToCart(book); showToast(`ADDED: ${book.name}`); event.target.value = ''; } 
-                    else { showToast('ERR: OUT_OF_STOCK', 'error'); event.target.value = ''; }
+                    // Direct Add (not toggle) for Barcode scanning
+                    if (book.available > 0) { 
+                        if(!checkoutCart.find(b => b.id === book.id)) {
+                            checkoutCart.push(book); 
+                            updateUI();
+                            showToast(`ADDED: ${book.name}`); 
+                        } else {
+                            showToast(`ALREADY_IN_CART`, 'error');
+                        }
+                        event.target.value = ''; 
+                    } else { 
+                        showToast('ERR: OUT_OF_STOCK', 'error'); event.target.value = ''; 
+                    }
                 } else if (type === 'return') {
                     const student = activeStudents.find(s => s.books.includes(book.name));
                     if (student) {
@@ -510,7 +558,9 @@
 
         async function performLogin(email, overridePassword = null) {
             const password = overridePassword || document.getElementById('authPassword').value;
-            if(!password) return showToast("ERR: PASSWORD_REQUIRED", 'error');
+            // Admin inspect override: if overridePassword provided, skip check
+            if(!password && !overridePassword) return showToast("ERR: PASSWORD_REQUIRED", 'error');
+            
             try {
                 const res = await fetch('api.php?action=user_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
                 if(res.status === 403 || res.status === 401) { showToast("ERR: ACCESS_DENIED", 'error'); document.getElementById('authPassword').value = ''; } 
@@ -533,17 +583,41 @@
         function renderHistory(data) {
             document.getElementById('authContainer').classList.add('hidden');
             document.getElementById('myHistoryResults').classList.remove('hidden');
-            const name = document.getElementById('authMessage').innerText.replace('IDENTITY_CONFIRMED: ', '');
-            if(name && name !== "NEW_IDENTITY_DETECTED") document.getElementById('userNameDisplay').innerText = name;
+            
+            // Name handling logic
+            const authMsgName = document.getElementById('authMessage').innerText.replace('IDENTITY_CONFIRMED: ', '');
+            if(authMsgName && authMsgName !== "NEW_IDENTITY_DETECTED" && authMsgName !== "VERIFY_CREDENTIALS...") {
+                document.getElementById('userNameDisplay').innerText = authMsgName;
+            } else {
+                // Fallback if inspecting or direct login without intermediate state
+                const emailInput = document.getElementById('authEmail').value;
+                document.getElementById('userNameDisplay').innerText = emailInput; 
+            }
+
             const activeList = document.getElementById('myActiveList');
             if(data.active.length === 0) activeList.innerHTML = '<li class="text-sys-mid italic text-xs">NO_ACTIVE_ASSETS</li>';
             else activeList.innerHTML = data.active.map(b => `<li class="flex items-center gap-2"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div><span>${safe(b)}</span></li>`).join('');
+            
             const historyTable = document.getElementById('myHistoryTable');
             historyTable.innerHTML = data.history.map(h => {
                 const isBorrow = h.Action === 'Borrow';
                 const icon = isBorrow ? '<span class="text-sys-black font-bold">+</span>' : '<span class="text-sys-mid">-</span>';
                 return `<tr><td class="p-2 whitespace-nowrap text-sys-mid">${safe(h.Date)}</td><td class="p-2">${icon}</td><td class="p-2">${safe(h.Book)}</td></tr>`;
             }).join('');
+        }
+
+        // --- INSPECT LOGIC ---
+        function inspectUser(email, name) {
+            // Switch to Account tab
+            showPage('myaccount', document.getElementById('nav-account'));
+            
+            // Pre-fill UI so it looks correct
+            document.getElementById('authEmail').value = email;
+            document.getElementById('authMessage').innerText = `IDENTITY_CONFIRMED: ${safe(name)}`;
+            
+            // Call login with Admin Password to bypass check
+            performLogin(email, adminPassword);
+            showToast(`INSPECTING: ${name}`);
         }
 
         function openLinkIDModal() { document.getElementById('linkIDModal').classList.remove('hidden'); setTimeout(() => document.getElementById('linkIDInput').focus(), 100); }
@@ -557,7 +631,7 @@
             else { showToast("ERR: LINK_FAILED", 'error'); }
         }
 
-        // --- PART 3: ADMIN LOGIC ---
+        // --- ADMIN LOGIC ---
         function checkAdmin() { document.getElementById('adminPassInput').value = ''; if (adminPassword) showPage('admin'); else document.getElementById('loginOverlay').classList.remove('hidden'); }
         function closeLogin() { document.getElementById('loginOverlay').classList.add('hidden'); }
         function logoutAdmin() { adminPassword = ""; document.getElementById('adminPassInput').value = ''; showPage('catalog'); }
@@ -578,8 +652,15 @@
                 tbody.innerHTML = loans.map(l => {
                     const rowClass = l.isOverdue ? 'text-alert' : '';
                     const time = l.isOverdue ? `OVERDUE +${Math.abs(l.daysLeft)}` : `${l.daysLeft} DAYS`;
-                    const ident = l.email ? l.email : l.student;
-                    return `<tr class="hover:bg-sys-light/50 border-b border-sys-light"><td class="p-3 truncate max-w-[150px]" title="${safe(ident)}">${safe(ident)}</td><td class="p-3 truncate max-w-[150px]">${safe(l.book)}</td><td class="p-3 text-right ${rowClass}">${time}</td></tr>`;
+                    // NAME FIX: If email is available, use it for inspection, but display Name
+                    const display = safe(l.student); 
+                    const email = safe(l.email);
+                    
+                    return `<tr class="hover:bg-sys-light/50 border-b border-sys-light cursor-pointer" onclick="inspectUser('${email}', '${display}')">
+                        <td class="p-3 truncate max-w-[150px]" title="${display}">${display}</td>
+                        <td class="p-3 truncate max-w-[150px]">${safe(l.book)}</td>
+                        <td class="p-3 text-right ${rowClass}">${time}</td>
+                    </tr>`;
                 }).join('');
             }
         }
@@ -591,8 +672,9 @@
             document.getElementById('statUsers').innerText = uniqueUsers;
             document.getElementById('adminHistoryTable').innerHTML = history.map(h => {
                 const action = h.Action === 'Borrow' ? 'OUT' : 'IN ';
-                const color = h.Action === 'Borrow' ? 'text-sys-black' : 'text-sys-mid';
-                return `<tr><td class="whitespace-nowrap w-32">[${safe(h.Date)}]</td><td class="w-10 ${color}">${action}</td><td>${safe(h.Student)} :: ${safe(h.Book)}</td></tr>`;
+                // COLOR FIX: Green for IN, Red for OUT
+                const color = h.Action === 'Borrow' ? 'text-alert' : 'text-emerald-600'; 
+                return `<tr><td class="whitespace-nowrap w-32">[${safe(h.Date)}]</td><td class="w-10 ${color} font-bold">${action}</td><td>${safe(h.Student)} :: ${safe(h.Book)}</td></tr>`;
             }).join('');
         }
         
