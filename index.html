@@ -327,8 +327,15 @@
 
         function safe(str) {
             if(!str) return '';
+            // FIX: Decode HTML entities (like &#039;) first using a textarea hack
+            // This ensures "What&#039;s" becomes "What's" BEFORE we display it
+            const txt = document.createElement('textarea');
+            txt.innerHTML = str;
+            const decoded = txt.value;
+            
+            // Then re-sanitize to prevent XSS (script tags)
             const div = document.createElement('div');
-            div.textContent = str;
+            div.textContent = decoded;
             return div.innerHTML;
         }
 
