@@ -8,6 +8,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <script>
         tailwind.config = {
@@ -20,11 +21,11 @@
                     },
                     colors: {
                         sys: { 
-                            black: '#27272a', // Zinc-800 (Charcoal)
+                            black: '#27272a', 
                             dark: '#3f3f46',  
                             mid: '#71717a',   
                             light: '#d4d4d8', 
-                            white: '#f4f4f5'  // Zinc-100 (Off White)
+                            white: '#f4f4f5'  
                         },
                         alert: '#D71921' 
                     }
@@ -35,12 +36,7 @@
     <style>
         body { background-color: theme('colors.sys.white'); font-family: 'Space Grotesk', sans-serif; color: theme('colors.sys.black'); }
         
-        /* FIX: Made dots darker and slightly larger for visibility */
-        .bg-grid { 
-            background-size: 24px 24px; 
-            background-image: radial-gradient(circle, #cbd5e1 2px, transparent 2px); 
-        }
-        
+        .bg-grid { background-size: 24px 24px; background-image: radial-gradient(circle, #cbd5e1 2px, transparent 2px); }
         .page-enter { animation: glitchFade 0.3s ease-out forwards; opacity: 0; }
         @keyframes glitchFade { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
         
@@ -57,22 +53,28 @@
         .card-base:hover { border-color: theme('colors.sys.black'); }
         
         .card-selected { 
-            background-color: #27272a !important; /* Forces Dark Charcoal Background */
-            color: #f4f4f5 !important;            /* Forces Light Text */
-            border-color: #27272a !important;     /* Hides Border */
+            background-color: #27272a !important; 
+            color: #f4f4f5 !important;            
+            border-color: #27272a !important;     
         }
-        
-        /* Force all children text elements to turn light */
         .card-selected * {
             color: #f4f4f5 !important;
-            border-color: rgba(255, 255, 255, 0.2) !important; /* Lighten internal borders */
+            border-color: rgba(255, 255, 255, 0.2) !important; 
         }
-        
-        /* Specific tweaks for inner elements */
         .card-selected .text-sys-mid { color: #a1a1aa !important; } 
         .card-selected .bg-num { color: #ffffff !important; opacity: 0.1; }
         
         .glass-overlay { background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(4px); }
+
+        /* SCANNER HUD STYLES */
+        #reader { width: 100%; height: 100%; object-fit: cover; }
+        #reader video { object-fit: cover; width: 100% !important; height: 100% !important; border-radius: 1rem; }
+        .scan-line {
+            position: absolute; width: 100%; height: 2px; background: #D71921;
+            top: 0; left: 0; animation: scanMove 2s infinite linear;
+            box-shadow: 0 0 4px #D71921;
+        }
+        @keyframes scanMove { 0% { top: 10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex relative bg-grid">
@@ -86,12 +88,10 @@
             <button onclick="showPage('catalog', this)" id="nav-catalog" class="nav-item group w-full aspect-square rounded-2xl flex items-center justify-center border border-transparent hover:border-sys-black transition-all duration-200 nav-active">
                 <i class="ph ph-book-open text-2xl"></i>
             </button>
-            
             <button onclick="showPage('borrow', this)" id="nav-borrow" class="nav-item group w-full aspect-square rounded-2xl flex flex-col items-center justify-center text-sys-mid border border-transparent hover:border-sys-black transition-all duration-200 relative">
                 <i class="ph ph-arrow-up-right text-2xl"></i>
                 <span id="badge-borrow" class="hidden absolute top-2 right-2 w-2 h-2 bg-alert rounded-full"></span>
             </button>
-
             <button onclick="showPage('return', this)" id="nav-return" class="nav-item group w-full aspect-square rounded-2xl flex items-center justify-center text-sys-mid border border-transparent hover:border-sys-black transition-all duration-200">
                 <i class="ph ph-arrow-down-left text-2xl"></i>
             </button>
@@ -156,7 +156,10 @@
                         </div>
                         <div>
                             <label class="font-mono text-[10px] text-sys-mid uppercase tracking-widest mb-2 block">02. ITEM_SCAN</label>
-                            <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-sm focus:border-sys-black outline-none" placeholder="SCAN_BARCODE_HERE">
+                            <div class="flex gap-2">
+                                <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-sm focus:border-sys-black outline-none" placeholder="SCAN_BARCODE_HERE">
+                                <button onclick="startScanner('borrowBarcode')" class="bg-sys-black text-sys-white px-4 border border-sys-black hover:bg-alert hover:border-alert transition-colors"><i class="ph-bold ph-camera text-xl"></i></button>
+                            </div>
                         </div>
                         <div class="border-t border-b border-dashed border-sys-mid/30 py-4 min-h-[100px]">
                             <ul id="cartList" class="space-y-2 font-mono text-sm"></ul>
@@ -171,7 +174,12 @@
                 <div class="border border-sys-black p-6 md:p-10 bg-sys-white text-center">
                     <i class="ph-bold ph-arrow-down-left text-4xl mb-4 text-sys-mid"></i>
                     <h2 class="font-matrix text-2xl uppercase mb-6">INBOUND_PROCESSING</h2>
-                    <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full bg-sys-light/30 border-2 border-sys-black p-4 font-mono text-center text-xl focus:bg-sys-white outline-none mb-4" placeholder="[ SCAN_TO_RETURN ]">
+                    
+                    <div class="flex gap-2 max-w-md mx-auto mb-4">
+                        <input type="text" id="returnBarcode" onkeydown="handleBarcode(event, 'return')" class="block w-full bg-sys-light/30 border-2 border-sys-black p-4 font-mono text-center text-xl focus:bg-sys-white outline-none" placeholder="[ SCAN_TO_RETURN ]">
+                        <button onclick="startScanner('returnBarcode')" class="bg-sys-black text-sys-white px-4 border border-sys-black hover:bg-alert hover:border-alert transition-colors"><i class="ph-bold ph-camera text-xl"></i></button>
+                    </div>
+
                     <p class="font-mono text-xs text-sys-mid">// AUTO_COMMIT_ON_SCAN</p>
                 </div>
             </div>
@@ -232,6 +240,21 @@
         </div>
     </main>
 
+    <div id="scannerModal" class="fixed inset-0 bg-sys-black z-[60] hidden flex flex-col">
+        <div class="flex justify-between items-center p-4 text-sys-white border-b border-sys-dark">
+            <span class="font-matrix text-lg">OPTICAL_SENSOR_ACTIVE</span>
+            <button onclick="stopScanner()" class="text-sys-mid hover:text-alert"><i class="ph-bold ph-x text-2xl"></i></button>
+        </div>
+        <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+            <div id="reader" class="w-full h-full"></div>
+            <div class="absolute inset-0 pointer-events-none flex flex-col justify-between p-8">
+                <div class="flex justify-between"><div class="w-8 h-8 border-t-2 border-l-2 border-alert"></div><div class="w-8 h-8 border-t-2 border-r-2 border-alert"></div></div>
+                <div class="scan-line"></div> <div class="flex justify-between"><div class="w-8 h-8 border-b-2 border-l-2 border-alert"></div><div class="w-8 h-8 border-b-2 border-r-2 border-alert"></div></div>
+            </div>
+            <div class="absolute bottom-10 text-sys-white font-mono text-xs bg-black/50 px-4 py-1 rounded-full">ALIGN_BARCODE_WITHIN_BRACKETS</div>
+        </div>
+    </div>
+
     <div id="loginOverlay" class="fixed inset-0 glass-overlay z-50 hidden flex items-center justify-center fade-enter px-4">
         <div class="bg-sys-white border-2 border-sys-black p-8 w-full max-w-sm text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <i class="ph-bold ph-terminal-window text-4xl mb-4"></i><h3 class="font-matrix text-2xl uppercase mb-6">RESTRICTED_ACCESS</h3>
@@ -257,6 +280,8 @@
     <script>
         let allBooks = [], activeStudents = [], adminPassword = "";
         let checkoutCart = []; 
+        let html5QrCode; 
+        let scanTarget = '';
 
         function safe(str) {
             if(!str) return '';
@@ -280,20 +305,15 @@
         }
 
         function showPage(pageId, btn) {
-            // FIX: Clear Inputs on Tab Switch
             document.getElementById('searchBox').value = '';
             document.getElementById('borrowEmail').value = '';
             document.getElementById('borrowBarcode').value = '';
             document.getElementById('returnBarcode').value = '';
             document.getElementById('borrowIdentityMsg').innerText = 'WAITING_FOR_INPUT...';
             document.getElementById('borrowIdentityMsg').className = "h-4 mt-2 font-mono text-xs text-right text-sys-mid";
+            
+            if(pageId === 'catalog') { renderCatalog(allBooks); }
 
-            // If returning to catalog, reset filter
-            if(pageId === 'catalog') {
-                renderCatalog(allBooks);
-            }
-
-            // ... Existing Nav Logic ...
             document.querySelectorAll('.nav-item').forEach(el => {
                 el.classList.remove('nav-active'); el.classList.add('text-sys-mid');
                 el.querySelector('i').classList.remove('ph-fill'); el.querySelector('i').classList.add('ph');
@@ -324,12 +344,23 @@
             if(pageId === 'myaccount') resetUserAuthUI();
         }
 
+        // FIX: Updated Toast Logic to support removal type
         function showToast(msg, type='success') {
             const t = document.getElementById('toast');
             const icon = document.getElementById('toastIcon');
             document.getElementById('toastMessage').innerText = msg;
-            icon.innerText = type === 'error' ? '!!' : '>>';
-            icon.className = type === 'error' ? 'text-alert font-bold' : 'text-emerald-400 font-bold';
+            
+            if (type === 'error') {
+                icon.innerText = '!!';
+                icon.className = 'text-alert font-bold';
+            } else if (type === 'remove') {
+                icon.innerText = '<<';
+                icon.className = 'text-orange-500 font-bold';
+            } else {
+                icon.innerText = '>>';
+                icon.className = 'text-emerald-400 font-bold';
+            }
+            
             t.classList.remove('translate-y-24', 'opacity-0');
             setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3000);
         }
@@ -356,11 +387,9 @@
                 const statusColor = avail > 0 ? 'text-sys-mid status-text' : 'text-alert status-text';
                 const idLabel = b._ids.length > 1 ? `${safe(b._ids[0])} +${b._ids.length-1}` : safe(b._ids[0]);
                 
-                // CHECK IF IN CART
                 const anyInCart = b._ids.some(id => checkoutCart.some(item => item.id === id));
                 const activeClass = anyInCart ? 'card-selected' : 'bg-sys-white';
 
-                // We pass the First Available ID to the click handler
                 return `
                 <div class="${activeClass} border border-sys-black p-4 flex flex-col gap-2 cursor-pointer card-base transition-all group h-48 relative overflow-hidden" onclick="addToCartByCard('${safe(b._ids[0])}', ${avail})">
                     <div class="flex justify-between items-start font-mono text-[10px] uppercase text-sys-mid relative z-10"><span>ID: ${idLabel}</span><span class="${statusColor}">${status}</span></div>
@@ -376,24 +405,26 @@
             renderCatalog(allBooks.filter(b => b.name.toLowerCase().includes(term) || String(b.id).includes(term)));
         }
 
-        // --- CART ACTIONS (TOGGLE LOGIC) ---
         function addToCartByCard(id, avail) {
             const book = allBooks.find(b => String(b.id) === String(id));
             if(!book) return;
-
-            // Check if already in cart
             const index = checkoutCart.findIndex(b => b.id === book.id);
             if(index !== -1) {
-                // If in cart, REMOVE it (Toggle behavior)
                 removeFromCart(index);
-                showToast(`REMOVED: ${book.name}`);
+                // FIX: Use new remove type for toast
+                showToast(`REMOVED: ${book.name}`, 'remove');
             } else {
-                // If not in cart, ADD it
                 if(avail <= 0) return showToast("ITEM_UNAVAILABLE", 'error');
                 checkoutCart.push(book); 
                 showToast(`ADDED: ${book.name}`);
                 updateUI();
             }
+        }
+
+        function addToCart(book) {
+            if(checkoutCart.find(b => b.id === book.id)) return showToast("DUPLICATE_ENTRY", 'error');
+            checkoutCart.push(book); 
+            updateUI();
         }
 
         function removeFromCart(index) { 
@@ -403,20 +434,12 @@
         
         function updateUI() {
             renderCart();
-            renderCatalog(allBooks); // Re-render to show active state
-            
-            // Update Badges
+            renderCatalog(allBooks); 
             const count = checkoutCart.length;
             const badgeDesktop = document.getElementById('badge-borrow');
             const badgeMobile = document.getElementById('badge-borrow-mobile');
-            
-            if(count > 0) {
-                badgeDesktop.classList.remove('hidden');
-                badgeMobile.classList.remove('hidden');
-            } else {
-                badgeDesktop.classList.add('hidden');
-                badgeMobile.classList.add('hidden');
-            }
+            if(count > 0) { badgeDesktop.classList.remove('hidden'); badgeMobile.classList.remove('hidden'); } 
+            else { badgeDesktop.classList.add('hidden'); badgeMobile.classList.add('hidden'); }
         }
 
         function renderCart() {
@@ -433,7 +456,7 @@
                 checkoutCart.forEach((b, index) => {
                     const li = document.createElement('li');
                     li.className = "flex justify-between items-center group cursor-pointer hover:bg-sys-light/30 px-2 py-1 -mx-2 rounded";
-                    li.innerHTML = `<div class="truncate pr-4">> ${safe(b.name)}</div><button onclick="removeFromCart(${index})" class="text-sys-mid hover:text-alert text-xs">[DEL]</button>`;
+                    li.innerHTML = `<div class="truncate pr-4">> ${safe(b.name)}</div><button onclick="removeFromCart(${index}); showToast('REMOVED', 'remove')" class="text-sys-mid hover:text-alert text-xs">[DEL]</button>`;
                     list.appendChild(li);
                 });
             }
@@ -443,42 +466,71 @@
             if (event.key !== 'Enter') return;
             const code = event.target.value.trim();
             if (!code) return;
+            processBarcode(code, type, event.target);
+        }
 
+        function processBarcode(code, type, inputEl) {
             const book = allBooks.find(b => String(b.id) === code);
             if (book) {
                 if (type === 'borrow') {
-                    // Direct Add (not toggle) for Barcode scanning
                     if (book.available > 0) { 
                         if(!checkoutCart.find(b => b.id === book.id)) {
                             checkoutCart.push(book); 
                             updateUI();
                             showToast(`ADDED: ${book.name}`); 
-                        } else {
-                            showToast(`ALREADY_IN_CART`, 'error');
-                        }
-                        event.target.value = ''; 
-                    } else { 
-                        showToast('ERR: OUT_OF_STOCK', 'error'); event.target.value = ''; 
-                    }
+                        } else { showToast(`ALREADY_IN_CART`, 'error'); }
+                        if(inputEl) inputEl.value = ''; 
+                    } else { showToast('ERR: OUT_OF_STOCK', 'error'); if(inputEl) inputEl.value = ''; }
                 } else if (type === 'return') {
                     const student = activeStudents.find(s => s.books.includes(book.name));
                     if (student) {
-                        const res = await fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student: student.name, book: book.name, action: 'Return' }) });
-                        if(res.ok) { showToast('SUCCESS: RETURNED'); loadReturnList(); event.target.value = ''; }
-                        else { showToast('ERR: TRANSACTION_FAILED', 'error'); }
-                    } else { showToast('ERR: NOT_CHECKED_OUT', 'error'); event.target.value = ''; }
+                        fetch('api.php?action=transaction', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student: student.name, book: book.name, action: 'Return' }) })
+                        .then(res => { if(res.ok) { showToast('SUCCESS: RETURNED'); loadReturnList(); if(inputEl) inputEl.value = ''; } else { showToast('ERR: TRANSACTION_FAILED', 'error'); } });
+                    } else { showToast('ERR: NOT_CHECKED_OUT', 'error'); if(inputEl) inputEl.value = ''; }
                 }
                 return;
             }
-
             if (type === 'borrow') {
-                const res = await fetch('api.php?action=lookup_student_id', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student_id: code }) });
-                const data = await res.json();
-                if(data.found) {
-                    document.getElementById('borrowEmail').value = data.email;
-                    identifyUser(); event.target.value = ''; showToast(`ID_VERIFIED: ${data.name}`);
-                } else { showToast("ERR: UNKNOWN_BARCODE", 'error'); event.target.value = ''; }
-            } else { showToast("ERR: UNKNOWN_BARCODE", 'error'); event.target.value = ''; }
+                fetch('api.php?action=lookup_student_id', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ student_id: code }) })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.found) {
+                        document.getElementById('borrowEmail').value = data.email;
+                        identifyUser(); 
+                        if(inputEl) inputEl.value = '';
+                        showToast(`ID_VERIFIED: ${data.name}`);
+                    } else { showToast("ERR: UNKNOWN_BARCODE", 'error'); if(inputEl) inputEl.value = ''; }
+                });
+            } else { showToast("ERR: UNKNOWN_BARCODE", 'error'); if(inputEl) inputEl.value = ''; }
+        }
+
+        // --- SCANNER LOGIC ---
+        function startScanner(targetId) {
+            scanTarget = targetId;
+            document.getElementById('scannerModal').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText, decodedResult) => {
+                    stopScanner();
+                    const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+                    audio.play().catch(e=>{});
+                    const input = document.getElementById(scanTarget);
+                    input.value = decodedText;
+                    processBarcode(decodedText, scanTarget === 'borrowBarcode' ? 'borrow' : 'return', input);
+                },
+                (errorMessage) => { /* ignore */ }
+            ).catch(err => { console.error(err); showToast("ERR: CAMERA_ACCESS_DENIED", 'error'); });
+        }
+
+        function stopScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    document.getElementById('scannerModal').classList.add('hidden');
+                }).catch(err => console.error(err));
+            } else {
+                document.getElementById('scannerModal').classList.add('hidden');
+            }
         }
 
         async function identifyUser() {
@@ -510,7 +562,7 @@
             btnText.innerText = "INITIATE_TRANSFER";
         }
 
-        // --- PART 3: AUTH LOGIC ---
+        // --- AUTH & ADMIN ---
         function resetUserAuthUI() {
             document.getElementById('myHistoryResults').classList.add('hidden');
             document.getElementById('authContainer').classList.remove('hidden');
@@ -558,9 +610,7 @@
 
         async function performLogin(email, overridePassword = null) {
             const password = overridePassword || document.getElementById('authPassword').value;
-            // Admin inspect override: if overridePassword provided, skip check
             if(!password && !overridePassword) return showToast("ERR: PASSWORD_REQUIRED", 'error');
-            
             try {
                 const res = await fetch('api.php?action=user_history', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email, password }) });
                 if(res.status === 403 || res.status === 401) { showToast("ERR: ACCESS_DENIED", 'error'); document.getElementById('authPassword').value = ''; } 
@@ -583,21 +633,17 @@
         function renderHistory(data) {
             document.getElementById('authContainer').classList.add('hidden');
             document.getElementById('myHistoryResults').classList.remove('hidden');
-            
-            // Name handling logic
             const authMsgName = document.getElementById('authMessage').innerText.replace('IDENTITY_CONFIRMED: ', '');
             if(authMsgName && authMsgName !== "NEW_IDENTITY_DETECTED" && authMsgName !== "VERIFY_CREDENTIALS...") {
                 document.getElementById('userNameDisplay').innerText = authMsgName;
             } else {
-                // Fallback if inspecting or direct login without intermediate state
                 const emailInput = document.getElementById('authEmail').value;
                 document.getElementById('userNameDisplay').innerText = emailInput; 
             }
-
             const activeList = document.getElementById('myActiveList');
             if(data.active.length === 0) activeList.innerHTML = '<li class="text-sys-mid italic text-xs">NO_ACTIVE_ASSETS</li>';
-            else activeList.innerHTML = data.active.map(b => `<li class="flex items-center gap-2"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div><span>${safe(b)}</span></li>`).join('');
-            
+            // FIX: Added shrink-0 and mt-2 for perfect dot alignment
+            else activeList.innerHTML = data.active.map(b => `<li class="flex items-start gap-2"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0 mt-2"></div><span>${safe(b)}</span></li>`).join('');
             const historyTable = document.getElementById('myHistoryTable');
             historyTable.innerHTML = data.history.map(h => {
                 const isBorrow = h.Action === 'Borrow';
@@ -606,16 +652,10 @@
             }).join('');
         }
 
-        // --- INSPECT LOGIC ---
         function inspectUser(email, name) {
-            // Switch to Account tab
             showPage('myaccount', document.getElementById('nav-account'));
-            
-            // Pre-fill UI so it looks correct
             document.getElementById('authEmail').value = email;
             document.getElementById('authMessage').innerText = `IDENTITY_CONFIRMED: ${safe(name)}`;
-            
-            // Call login with Admin Password to bypass check
             performLogin(email, adminPassword);
             showToast(`INSPECTING: ${name}`);
         }
@@ -631,7 +671,6 @@
             else { showToast("ERR: LINK_FAILED", 'error'); }
         }
 
-        // --- ADMIN LOGIC ---
         function checkAdmin() { document.getElementById('adminPassInput').value = ''; if (adminPassword) showPage('admin'); else document.getElementById('loginOverlay').classList.remove('hidden'); }
         function closeLogin() { document.getElementById('loginOverlay').classList.add('hidden'); }
         function logoutAdmin() { adminPassword = ""; document.getElementById('adminPassInput').value = ''; showPage('catalog'); }
@@ -652,15 +691,9 @@
                 tbody.innerHTML = loans.map(l => {
                     const rowClass = l.isOverdue ? 'text-alert' : '';
                     const time = l.isOverdue ? `OVERDUE +${Math.abs(l.daysLeft)}` : `${l.daysLeft} DAYS`;
-                    // NAME FIX: If email is available, use it for inspection, but display Name
                     const display = safe(l.student); 
                     const email = safe(l.email);
-                    
-                    return `<tr class="hover:bg-sys-light/50 border-b border-sys-light cursor-pointer" onclick="inspectUser('${email}', '${display}')">
-                        <td class="p-3 truncate max-w-[150px]" title="${display}">${display}</td>
-                        <td class="p-3 truncate max-w-[150px]">${safe(l.book)}</td>
-                        <td class="p-3 text-right ${rowClass}">${time}</td>
-                    </tr>`;
+                    return `<tr class="hover:bg-sys-light/50 border-b border-sys-light cursor-pointer" onclick="inspectUser('${email}', '${display}')"><td class="p-3 truncate max-w-[150px]" title="${display}">${display}</td><td class="p-3 truncate max-w-[150px]">${safe(l.book)}</td><td class="p-3 text-right ${rowClass}">${time}</td></tr>`;
                 }).join('');
             }
         }
@@ -672,7 +705,6 @@
             document.getElementById('statUsers').innerText = uniqueUsers;
             document.getElementById('adminHistoryTable').innerHTML = history.map(h => {
                 const action = h.Action === 'Borrow' ? 'OUT' : 'IN ';
-                // COLOR FIX: Green for IN, Red for OUT
                 const color = h.Action === 'Borrow' ? 'text-alert' : 'text-emerald-600'; 
                 return `<tr><td class="whitespace-nowrap w-32">[${safe(h.Date)}]</td><td class="w-10 ${color} font-bold">${action}</td><td>${safe(h.Student)} :: ${safe(h.Book)}</td></tr>`;
             }).join('');
