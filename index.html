@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LibraryOS // N-Edition (Grey)</title>
+    <title>LibraryOS // N-Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -21,11 +21,11 @@
                     },
                     colors: {
                         sys: { 
-                            black: '#27272a', 
+                            black: '#27272a', // Zinc-800
                             dark: '#3f3f46',  
                             mid: '#71717a',   
                             light: '#d4d4d8', 
-                            white: '#f4f4f5'  
+                            white: '#f4f4f5'  // Zinc-100
                         },
                         alert: '#D71921' 
                     }
@@ -36,22 +36,29 @@
     <style>
         body { background-color: theme('colors.sys.white'); font-family: 'Space Grotesk', sans-serif; color: theme('colors.sys.black'); }
         
+        /* TEXTURE: Darker, sharper dots for visibility */
         .bg-grid { background-size: 24px 24px; background-image: radial-gradient(circle, #cbd5e1 2px, transparent 2px); }
+        
+        /* ANIMATION */
         .page-enter { animation: glitchFade 0.3s ease-out forwards; opacity: 0; }
         @keyframes glitchFade { 0% { opacity: 0; transform: translateY(5px); } 100% { opacity: 1; transform: translateY(0); } }
         
+        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: theme('colors.sys.black'); }
         ::-webkit-scrollbar-thumb:hover { background: theme('colors.alert'); }
         
+        /* ACTIVE STATES */
         .nav-active { background-color: theme('colors.sys.black'); color: theme('colors.sys.white'); }
         .blink-dot { animation: blink 2s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         
-        .card-base { transition: all 0.2s; }
+        /* CARD STYLES */
+        .card-base { transition: all 0.2s; border-color: theme('colors.sys.light'); }
         .card-base:hover { border-color: theme('colors.sys.black'); }
         
+        /* SELECTED STATE (INVERTED) */
         .card-selected { 
             background-color: #27272a !important; 
             color: #f4f4f5 !important;            
@@ -66,7 +73,7 @@
         
         .glass-overlay { background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(4px); }
 
-        /* SCANNER HUD STYLES */
+        /* SCANNER HUD */
         #reader { width: 100%; height: 100%; object-fit: cover; }
         #reader video { object-fit: cover; width: 100% !important; height: 100% !important; border-radius: 1rem; }
         .scan-line {
@@ -124,7 +131,7 @@
                 <div>
                     <h1 id="pageTitle" class="font-matrix text-4xl md:text-6xl text-sys-black uppercase leading-none tracking-tight">CATALOG</h1>
                     <div class="flex items-center gap-3 mt-2">
-                        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-sys-black text-sys-white text-[10px] font-mono rounded-sm">
+                        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-sys-black text-sys-white text-[10px] font-matrix rounded-sm">
                             <div class="w-1.5 h-1.5 bg-alert rounded-full blink-dot"></div><span>SYS.ONLINE</span>
                         </div>
                         <p id="pageSubtitle" class="font-mono text-xs uppercase text-sys-mid tracking-widest">Index // v2.0</p>
@@ -151,13 +158,13 @@
                     <div class="p-6 md:p-8 space-y-8">
                         <div>
                             <label class="font-mono text-[10px] text-sys-mid uppercase tracking-widest mb-2 block">01. TARGET_IDENTITY</label>
-                            <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-sm focus:border-sys-black outline-none" placeholder="USER_EMAIL_OR_ID">
+                            <input type="email" id="borrowEmail" onblur="identifyUser()" onkeydown="if(event.key==='Enter') identifyUser()" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-base md:text-sm focus:border-sys-black outline-none" placeholder="USER_EMAIL_OR_ID">
                             <div id="borrowIdentityMsg" class="h-4 mt-2 font-mono text-xs text-right text-sys-mid">WAITING_FOR_INPUT...</div>
                         </div>
                         <div>
                             <label class="font-mono text-[10px] text-sys-mid uppercase tracking-widest mb-2 block">02. ITEM_SCAN</label>
                             <div class="flex gap-2">
-                                <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-sm focus:border-sys-black outline-none" placeholder="SCAN_BARCODE_HERE">
+                                <input type="text" id="borrowBarcode" onkeydown="handleBarcode(event, 'borrow')" class="block w-full bg-sys-light/30 border border-sys-light p-4 font-mono text-base md:text-sm focus:border-sys-black outline-none" placeholder="SCAN_BARCODE_HERE">
                                 <button onclick="startScanner('borrowBarcode')" class="bg-sys-black text-sys-white px-4 border border-sys-black hover:bg-alert hover:border-alert transition-colors"><i class="ph-bold ph-camera text-xl"></i></button>
                             </div>
                         </div>
@@ -190,12 +197,12 @@
                     <div id="authContainer" class="p-8 md:p-12 text-center">
                         <i class="ph-bold ph-fingerprint text-4xl mb-6 text-sys-black"></i>
                         <div class="space-y-4 max-w-sm mx-auto">
-                            <input type="email" id="authEmail" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none placeholder-sys-mid" placeholder="ENTER_IDENTITY_KEY">
+                            <input type="email" id="authEmail" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-base md:text-sm outline-none placeholder-sys-mid" placeholder="ENTER_IDENTITY_KEY">
                             <div id="authStep2" class="hidden space-y-4">
                                 <p id="authMessage" class="font-mono text-xs text-sys-mid">VERIFY_CREDENTIALS...</p>
-                                <input type="text" id="authNameInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="FULL_NAME">
-                                <input type="text" id="authIdInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="SCAN_ID_CARD">
-                                <input type="password" id="authPassword" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-sm outline-none" placeholder="PASSWORD">
+                                <input type="text" id="authNameInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-base md:text-sm outline-none" placeholder="FULL_NAME">
+                                <input type="text" id="authIdInput" class="hidden block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-base md:text-sm outline-none" placeholder="SCAN_ID_CARD">
+                                <input type="password" id="authPassword" class="block w-full bg-sys-light/30 border border-sys-black p-4 font-mono text-base md:text-sm outline-none" placeholder="PASSWORD">
                             </div>
                             <button id="authBtnAction" onclick="checkUserStatus()" class="w-full bg-sys-black text-sys-white py-4 font-matrix text-lg hover:bg-alert transition-colors">AUTHENTICATE</button>
                         </div>
@@ -243,7 +250,7 @@
     <div id="scannerModal" class="fixed inset-0 bg-sys-black z-[60] hidden flex flex-col">
         <div class="flex justify-between items-center p-4 text-sys-white border-b border-sys-dark">
             <span class="font-matrix text-lg">OPTICAL_SENSOR_ACTIVE</span>
-            <button onclick="stopScanner()" class="text-sys-mid hover:text-alert"><i class="ph-bold ph-x text-2xl"></i></button>
+            <button onclick="stopScanner()" class="text-sys-mid hover:text-alert p-2"><i class="ph-bold ph-x text-2xl"></i></button>
         </div>
         <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <div id="reader" class="w-full h-full"></div>
@@ -344,7 +351,6 @@
             if(pageId === 'myaccount') resetUserAuthUI();
         }
 
-        // FIX: Updated Toast Logic to support removal type
         function showToast(msg, type='success') {
             const t = document.getElementById('toast');
             const icon = document.getElementById('toastIcon');
@@ -393,7 +399,7 @@
                 return `
                 <div class="${activeClass} border border-sys-black p-4 flex flex-col gap-2 cursor-pointer card-base transition-all group h-48 relative overflow-hidden" onclick="addToCartByCard('${safe(b._ids[0])}', ${avail})">
                     <div class="flex justify-between items-start font-mono text-[10px] uppercase text-sys-mid relative z-10"><span>ID: ${idLabel}</span><span class="${statusColor}">${status}</span></div>
-                    <div class="mt-2 relative z-10"><h3 class="font-sans font-bold text-lg leading-tight uppercase">${safe(b.name)}</h3></div>
+                    <div class="mt-2 relative z-10"><h3 class="font-sans font-bold text-lg leading-tight uppercase line-clamp-2">${safe(b.name)}</h3></div>
                     <div class="mt-auto pt-4 border-t border-dashed border-sys-light group-hover:border-sys-mid/50 flex justify-between items-end font-mono text-xs text-sys-mid relative z-10"><span>${safe(b.category)}</span><span>LOC: ${safe(b.shelf)}</span></div>
                      <div class="bg-num absolute -bottom-4 -right-4 text-9xl font-matrix text-sys-light/30 group-hover:text-sys-mid/20 pointer-events-none z-0 transition-colors">${safe(b.name).charAt(0)}</div>
                 </div>`;
@@ -411,7 +417,6 @@
             const index = checkoutCart.findIndex(b => b.id === book.id);
             if(index !== -1) {
                 removeFromCart(index);
-                // FIX: Use new remove type for toast
                 showToast(`REMOVED: ${book.name}`, 'remove');
             } else {
                 if(avail <= 0) return showToast("ITEM_UNAVAILABLE", 'error');
@@ -642,7 +647,6 @@
             }
             const activeList = document.getElementById('myActiveList');
             if(data.active.length === 0) activeList.innerHTML = '<li class="text-sys-mid italic text-xs">NO_ACTIVE_ASSETS</li>';
-            // FIX: Added shrink-0 and mt-2 for perfect dot alignment
             else activeList.innerHTML = data.active.map(b => `<li class="flex items-start gap-2"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0 mt-2"></div><span>${safe(b)}</span></li>`).join('');
             const historyTable = document.getElementById('myHistoryTable');
             historyTable.innerHTML = data.history.map(h => {
